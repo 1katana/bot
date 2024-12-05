@@ -6,48 +6,29 @@ from solders.keypair import Keypair
 import asyncio
 from solders.transaction import VersionedTransaction
 from transaction import Transaction
+from walletManager import WalletManager
 
 class SolanaManager:
-    def __init__(self,client):
+    def __init__(self,client, wallet_manager: WalletManager):
         self.client:AsyncClient = client
         
         self.master_wallet:Keypair
-        self.wallets:list[Keypair]=[]
+        self.wallet_manager = wallet_manager
+        self.master_wallet: Keypair = None
 
     
     @classmethod
-    async def create(cls,api_url="https://api.mainnet-beta.solana.com"):
-        client= AsyncClient(api_url)
-        return cls(client)
-    
-    async def add_master_wallet(self,secret_key:str):
-        
-        key = Keypair.from_bytes(bytes.fromhex(secret_key))
+    async def create(cls, api_url="https://api.mainnet-beta.solana.com", wallets_dir="wallets"):
+        client = AsyncClient(api_url)
+        wallet_manager = WalletManager(wallets_dir)
+        return cls(client, wallet_manager)
 
-        self.master_wallet= key
-    
-    async def generate_wallet(self,count=1):
-        
-        for _ in enumerate(count):
-            self.wallets.append(Keypair())
         
     async def send_transaction(self,txn:VersionedTransaction):
         
         return await self.client.send_transaction(txn)
     
     
-    async def add_wallet(self,secret_key:str):
-        self.wallets.append(Keypair.from_bytes(bytes.fromhex(secret_key)))
-        
-        
-    def add_master_wallet_from_json(self,file_path:str):
-        # Чтение JSON-файла
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-
-        # Создание объекта Keypair из JSON-данных
-        self.master_wallet = Keypair.from_bytes(data)
-        
         
     # Метод для создания и отправки транзакции
     async def transfer_sol(self, receiver: Pubkey, lamports: int):
