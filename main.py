@@ -1,11 +1,11 @@
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from http_request import SolanaManager
+from solana_manager import SolanaManager
 import asyncio
-from http_request import SolanaManager
+from solana_manager import SolanaManager
 from transaction import Transaction
 import json
-
+from solana.rpc.async_api import AsyncClient
 
 
 
@@ -15,6 +15,8 @@ async def main():
     receiver=Pubkey.from_string("7n2uZLLzLRQKHQE7X9cXU74oMdCwwAHQmBcm1gkGc1HK")
 
 
+    
+    
     manager= await SolanaManager.create(api_url="http://localhost:8899")
 
     manager.add_master_wallet_from_json("C:\\Users\\Katana\\Desktop\\bot\\wallet1.json")
