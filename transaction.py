@@ -4,10 +4,10 @@ from solders.pubkey import Pubkey
 from solders.message import MessageV0
 from solders.system_program import TransferParams, transfer
 from solders.transaction import VersionedTransaction
+import requests
 
 
-
-def Transaction(sender: Keypair,receiver:Pubkey,lamports: int,blockhash: Hash):
+def Transaction_between_wallets(sender: Keypair,receiver:Pubkey,lamports: int,blockhash: Hash):
 
     ix = transfer(
         TransferParams(
@@ -15,6 +15,7 @@ def Transaction(sender: Keypair,receiver:Pubkey,lamports: int,blockhash: Hash):
         )
     )
 
+    
     msg = MessageV0.try_compile(
         payer=sender.pubkey(),
         instructions=[ix],
@@ -24,3 +25,4 @@ def Transaction(sender: Keypair,receiver:Pubkey,lamports: int,blockhash: Hash):
     tx = VersionedTransaction(msg, [sender])
     
     return tx
+

@@ -5,7 +5,6 @@ import json
 from solders.keypair import Keypair
 import asyncio
 from solders.transaction import VersionedTransaction
-from transaction import Transaction
 from walletManager import WalletManager
 
 

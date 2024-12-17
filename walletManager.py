@@ -1,15 +1,9 @@
 import json
 import os
 from solders.keypair import Keypair
-from solders.system_program import TransferParams, transfer
-from solders.message import MessageV0
-from solders.hash import Hash
-from solders.transaction import VersionedTransaction
-from solana.rpc.async_api import AsyncClient
-from solders.pubkey import Pubkey
-from typing import Dict, List
 from wallet import Wallet
 import asyncio
+from solana.rpc.async_api import AsyncClient
 
 class WalletManager:
     def __init__(self, wallets_dir="wallets"):
@@ -20,7 +14,8 @@ class WalletManager:
         self.load_wallets_from_db()
 
     def add_wallet(self, secret_key: str):
-        key = Keypair.from_bytes(bytes.fromhex(secret_key))
+        secret_key = secret_key.replace(" ", "")
+        key = Keypair.from_base58_string(secret_key)
         wallet_name = f"wallet{self.get_wallet_counter()}"
         wallet = Wallet(key, wallet_name, is_master=True)
         self.save_wallet(wallet)
@@ -76,6 +71,7 @@ class WalletManager:
     def generate_wallet(self):
         wallet_name = f"wallet{self.get_wallet_counter()}"
         keypair = Keypair()
+        print(keypair.pubkey())
         wallet = Wallet(keypair, wallet_name)
         self.save_wallet(wallet)
         return wallet
@@ -108,16 +104,24 @@ class WalletManager:
     
 async def main():
     wallets=WalletManager()
+    
+    
+    
+ 
+    wal0=wallets.get_wallet("wallet0")
 
-    wal0=wallets.get_wallet("wallet0.json")
-    wal1=wallets.get_wallet("wallet1.json")
+    print(wal0.keypair.pubkey())
     
-    sol= AsyncClient("http://localhost:8899")
+    
+    sol= AsyncClient("https://api.mainnet-beta.solana.com")
+    
+    
+    ans=await wal0.get_balance(sol)
+    print( ans)
 
-    
-    wl= await wal1.transfer(wal0.keypair.pubkey(),1_000_000_000,sol)
-    
-    print(wl)
+    path= await wal0.get_quote_token("fisyo27uouYhxNKY51zDVxLTLhrrHxDx5hBk9EZddzL","So11111111111111111111111111111111111111112",10_000_000) 
+   
+    a=await wal0.transfer_token(path,sol)
     
     print()
 
