@@ -4,6 +4,7 @@ from solders.keypair import Keypair
 from wallet import Wallet
 import asyncio
 from solana.rpc.async_api import AsyncClient
+from jupiter import Jupiter
 
 class WalletManager:
     def __init__(self, wallets_dir="wallets"):
@@ -17,7 +18,7 @@ class WalletManager:
         secret_key = secret_key.replace(" ", "")
         key = Keypair.from_base58_string(secret_key)
         wallet_name = f"wallet{self.get_wallet_counter()}"
-        wallet = Wallet(key, wallet_name, is_master=True)
+        wallet = Wallet(key, wallet_name)
         self.save_wallet(wallet)
 
     def load_wallets_from_dir(self):
@@ -101,11 +102,15 @@ class WalletManager:
                         continue
         return counter
 
+
+import time
+
+
     
 async def main():
     wallets=WalletManager()
     
-    
+    # wallets.add_wallet("3PmKFKcJto63szmD3CiegJm9MoeDEtga8hy6mDWGfRfVV4SkAdtHhDhqQ2usSWy21gqoELNQ1ifMucJU71Hh2pwk")
     
  
     wal0=wallets.get_wallet("wallet0")
@@ -113,15 +118,27 @@ async def main():
     print(wal0.keypair.pubkey())
     
     
-    sol= AsyncClient("https://api.mainnet-beta.solana.com")
+    client= AsyncClient("https://api.mainnet-beta.solana.com")
     
+    bal=await wal0.get_balance(client)
+    tokens=await wal0.get_token_account_by_owner(client)
     
-    ans=await wal0.get_balance(sol)
-    print( ans)
+    for token in wal0.tokens.tokens:
+        if token.mint=="fisyo27uouYhxNKY51zDVxLTLhrrHxDx5hBk9EZddzL":
+            quote=await Jupiter.get_swap_quote(token.mint,"So11111111111111111111111111111111111111112",token.token_amount.amount)
+            swap=await Jupiter.swap_tokens(wal0.keypair,quote,auto=True)
+            
+            sign_trans=await wal0.sign_transaction_token(swap)
+            send_trans= await wal0.send_transaction_token(signed_txn=sign_trans,client=client)
+            await wal0.test_transaction(send_trans,client)
+    
+    print(bal)
+    print(tokens)
+    
 
-    path= await wal0.get_quote_token("fisyo27uouYhxNKY51zDVxLTLhrrHxDx5hBk9EZddzL","So11111111111111111111111111111111111111112",10_000_000) 
+    # path= await Jupiter.get_quote_token("AftybCzh88UzM1T435SDJPZ1vhYuJYfh9uJA8sTpump","So11111111111111111111111111111111111111112",1099576505830) 
    
-    a=await wal0.transfer_token(path,sol)
+    # a=await wal0.transfer_token(path,sol)
     
     print()
 
@@ -133,4 +150,3 @@ if __name__=="__main__":
     
     
     asyncio.run(main())
-    

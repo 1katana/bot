@@ -1,6 +1,8 @@
 import requests
 from solders.keypair import Keypair
 import json
+import aiohttp
+from typing import Optional
 
 
 class Jupiter:
@@ -18,7 +20,7 @@ class Jupiter:
         cls.BASE_URL = url
 
     @classmethod
-    def get_swap_quote(cls, input_mint: str, output_mint: str, amount: int) -> dict | None: 
+    async def get_swap_quote(cls, input_mint: str, output_mint: str, amount: int) -> Optional[dict]:
         """
         Получает котировку для обмена между двумя токенами.
 
@@ -32,48 +34,71 @@ class Jupiter:
             "outputMint": output_mint,
             "amount": amount,
             "autoSlippage": "true",
-            
         }
 
         url = f"{cls.BASE_URL}{cls.QUOTE_ENDPOINT}"
 
-
-        response = requests.get(url=url, params=params)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Error fetching quote: {response.text}")
-            return None
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, params=params) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    else:
+                        print(f"Error fetching quote: {response.status} {await response.text()}")
+                        return None
+            except aiohttp.ClientError as e:
+                print(f"Request failed: {e}")
+                return None
         
     @classmethod
-    def swap_tokens(cls,sender_keypair: Keypair, quote_response: dict):
+    async def swap_tokens(cls, sender_keypair: Keypair, quote_response: dict, prioritizationFeeLamports=0, 
+                          priorityLevelWithMaxLamports=None) -> Optional[dict]:
+        """
+        Perform a token swap.
+
+        :param sender_keypair: The sender's Keypair.
+        :param quote_response: The response with quote details.
+        :param prioritizationFeeLamports: Priority fee in lamports.
+        :param priorityLevelWithMaxLamports: A dict specifying priority level and max lamports, e.g., 
+                                            {maxLamports: 4000000, global: false, priorityLevel: "veryHigh"}.
+        :return: The transaction response as a dictionary, or None if an error occurs.
+        """
 
         url = f"{cls.BASE_URL}{cls.SWAP_ENDPOINT}"
-        
-        pubkey=sender_keypair.pubkey()
-        # Параметры для запроса
-        payload = json.dumps({
+        pubkey = sender_keypair.pubkey()
+
+        # Base payload for the request
+        payload = {
             "userPublicKey": str(pubkey),
             "quoteResponse": quote_response,
             "wrapUnwrapSOL": True,
-            "computeUnitPriceMicroLamports": 20 * 14000  # fee of roughly $.04  :shrug:
+            "dynamicSlippage": {"maxBps": 300}
+        }
 
-        })
+        # Add prioritization parameters based on input
+        if priorityLevelWithMaxLamports:
+            payload["prioritizationFeeLamports"] = {"priorityLevelWithMaxLamports": priorityLevelWithMaxLamports } 
+        else:
+            payload["prioritizationFeeLamports"] = prioritizationFeeLamports
 
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
 
-        # Отправка POST-запроса
-        response = requests.request("POST", url, headers=headers, data=payload)
-        
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Error creating swap transaction: {response.text}")
-            return None
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(url, headers=headers, json=payload) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    else:
+                        print(f"Error creating swap transaction: {response.status} {await response.text()}")
+                        return None
+            except aiohttp.ClientError as e:
+                print(f"Request failed: {e}")
+                return None
+
+
         
 
 if __name__ == "__main__":
