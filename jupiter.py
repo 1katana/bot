@@ -1,5 +1,5 @@
 import requests
-from solders.keypair import Keypair
+from solders.keypair import Keypair # type: ignore
 import json
 import aiohttp
 from typing import Optional
