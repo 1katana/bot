@@ -14,7 +14,13 @@ class WalletManager:
         self.wallets_dir = os.path.join(wallets_dir, "keypairs")
         self.db_file = os.path.join(wallets_dir, "wallet_db.json")
         self.wallets: Set[Wallet] = set()
-        asyncio.run(self.load_wallets_from_db())
+
+        
+    @classmethod
+    async def create(cls, wallets_dir="wallets"):
+        wallet_manager=cls(wallets_dir)
+        await wallet_manager.load_wallets_from_db()
+        return wallet_manager
 
     async def add_wallet(self, secret_key: str):
         secret_key = secret_key.replace(" ", "")
@@ -22,6 +28,11 @@ class WalletManager:
         wallet_name = f"wallet{await self.get_wallet_counter()}"
         wallet = Wallet(key, wallet_name)
         await self.save_wallet(wallet)
+        
+    async def delete_wallet(self, public_key: str):
+        wallet=await self.get_wallet(public_key)
+        self.wallets.remove(wallet)
+        await self.save_wallets_to_db()
 
     async def load_wallets_from_dir(self):
         if not os.path.exists(self.wallets_dir):
@@ -81,16 +92,16 @@ class WalletManager:
         await self.save_wallet(wallet)
         return wallet
 
-    async def get_wallet(self, name: str) -> Optional[Wallet]:
+    async def get_wallet(self, public_key: str) -> Optional[Wallet]:
         for wallet in self.wallets:
-            if wallet.name == name:
+            if str(wallet.get_public_key()) == public_key:
                 return wallet
         return None
 
-    async def set_master_wallet(self, name: str):
-        wallet = await self.get_wallet(name)
+    async def set_master_wallet(self, public_key: str,is_master:bool):
+        wallet = await self.get_wallet(public_key)
         if wallet:
-            wallet.is_master = True
+            wallet.is_master = is_master
             await self.save_wallets_to_db()
 
     async def get_wallet_counter(self) -> int:

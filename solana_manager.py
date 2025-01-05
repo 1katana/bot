@@ -16,6 +16,7 @@ class SolanaManager:
     def __init__(self, client: AsyncClient, wallet_manager: WalletManager):
         self.client = client
         self.wallet_manager = wallet_manager
+        self.wallets:list[UseClases]=[]
         self.init_wallets()
         
         self.main_token="So11111111111111111111111111111111111111112"
@@ -23,22 +24,32 @@ class SolanaManager:
 
     
     def init_wallets(self):
+
+        current_wallets = {w.wallet for w in self.wallets} 
+        new_wallets = self.wallet_manager.wallets
+
+        # Определяем, какие кошельки нужно добавить
+        wallets_to_add = new_wallets - current_wallets
+        # Определяем, какие кошельки нужно удалить
+        wallets_to_remove = current_wallets - new_wallets
+
         if self.wallets is not None:
-            # Получаем разницу между текущими и новыми кошельками
-            diff = self.wallet_manager.wallets.symmetric_difference(self.wallets)
-            # Добавляем недостающие элементы как объекты UseClases
-            self.wallets.extend(UseClases(w) for w in diff)
+            # Удаляем лишние кошельки
+            self.wallets = [wallet for wallet in self.wallets if wallet.wallet not in wallets_to_remove]
+            # Добавляем новые кошельки
+            self.wallets.extend(UseClases(w) for w in wallets_to_add)
         else:
             # Создаём новый список объектов UseClases
-            self.wallets = [UseClases(w) for w in self.wallet_manager.wallets]
-            
+            self.wallets = [UseClases(w) for w in new_wallets]
+
         self.use_wallets = [wallet for wallet in self.wallets if wallet.is_use]
+
 
     
     @classmethod
     async def create(cls, api_url="https://api.mainnet-beta.solana.com", wallets_dir="wallets"):
         client = AsyncClient(api_url)
-        wallet_manager = WalletManager(wallets_dir)
+        wallet_manager =await WalletManager.create(wallets_dir)
         return cls(client, wallet_manager)
 
     async def close(self):
@@ -53,9 +64,30 @@ class SolanaManager:
         Создает несколько кошельков.
         """
         for _ in range(num_wallets):
-            self.wallet_manager.generate_wallet()
+            await self.wallet_manager.generate_wallet()
         self.init_wallets()
+        
+    async def add_wallet(self, secret_key:str):
+       
+        await self.wallet_manager.add_wallet(secret_key=secret_key) 
+            
+        self.init_wallets()
+        
+    async def set_master_wallet(self,wallet:Wallet,is_master: bool):
+        await self.wallet_manager.set_master_wallet(str(wallet.get_public_key()),is_master)
+        self.init_wallets()
+        
+    async def delete_wallet(self,wallet:Wallet):
+        
+        await self.wallet_manager.delete_wallet(str(wallet.get_public_key()))
+        
+        self.init_wallets()
+        
+    async def load_from_dir(self):
+        
+        await self.wallet_manager.load_wallets_from_dir()
 
+        self.init_wallets()
         
     async def distribute_funds(self, amount_per_wallet: int = -1):
         """
@@ -171,56 +203,156 @@ class SolanaManager:
             print(f"Ошибка: {e}")
         except Exception as e:
             print(f"Непредвиденная ошибка: {e}")
-  
+    
+    
+    async def sell_token(self, confirmation_callback,amount:int=-1):
+        list_sign_transactions = []
+
+        for wallet in self.use_wallets:
+            tokens = await wallet.wallet.get_token_account_by_owner(self.client)
+            
+            for token in tokens.tokens:
+                if token.mint==self.use_token:
+                    token_balance=token.token_amount.amount
+            
+            if token_balance is None:
+                print(f"{wallet.wallet.name} Такого токена нет")
+            
+
+            print(f"Кошелек {wallet.wallet.get_public_key()} покупает токены на {token_balance} lamports.")
+
+            try:
+                quote = await Jupiter.get_swap_quote(              
+                    self.use_token,
+                    self.main_token,
+                    token_balance
+                )
+                swap = await Jupiter.swap_tokens(
+                    wallet.wallet.keypair,
+                    quote,
+                    priorityLevelWithMaxLamports={
+                        "maxLamports": wallet.usepriorityLevelWithMaxLamports,
+                        "priorityLevel": "veryHigh"
+                    }
+                )
+
+                sign_trans = await wallet.wallet.sign_transaction_token(swap)
+
+                if sign_trans is None:
+                    print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
+                    if not await confirmation_callback(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n Пропустить кошелек {wallet.wallet.name}?"):
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+
+                list_sign_transactions.append((wallet.wallet, sign_trans))
+            except Exception as e:
+                print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
+                if not await confirmation_callback(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n Пропустить кошелек {wallet.wallet.name} после ошибки?"):
+                    print("Прерывание выполнения по запросу пользователя.")
+                    return
+
+        # Отправка транзакций
+        await self._send_signed_transactions(list_sign_transactions, confirmation_callback)
   
     	
-    async def buy_token(self,amount:int):
-        
-        list_sign_transactions:list[VersionedTransaction]=[]
-        
+    async def buy_token(self, amount: int, confirmation_callback):
+        """
+        Метод покупки токенов с подтверждением.
+
+        :param amount: Сумма, на которую нужно купить токены.
+        :param confirmation_callback: Функция для подтверждения действия.
+        """
+        list_sign_transactions = []
+
         for wallet in self.use_wallets:
+            balance = await wallet.wallet.get_balance(self.client)
             
-            balance= await wallet.wallet.get_balance(self.client)
+            maximum_commission=wallet.usepriorityLevelWithMaxLamports*3
+            
+            
 
-            
-            # НАДО УЧИТЫВАТЬ И ДРУГИЕ КОМИССИИ
-            if balance<amount:
-                print(f"кошелек {wallet.wallet.get_public_key()} НА СЧЕТУ {balance} lamports не хватает")
-                buy_amount=balance-wallet.usepriorityLevelWithMaxLamports
+            # Учитываем дополнительные комиссии
+            if balance < amount + maximum_commission:
+                print(f"Кошелек {wallet.wallet.get_public_key()} имеет {balance} lamports, недостаточно средств.")
+                buy_amount = balance - maximum_commission
+                if buy_amount <= 0:
+                    print(f"Кошелек {wallet.wallet.name} не может совершить покупку из-за нехватки SOL.")
+                    if not await confirmation_callback(f"Кошелек {wallet.wallet.name} не может совершить покупку из-за нехватки SOL.\n Пропустить кошелек {wallet.wallet.name}?"):
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
             else:
-                buy_amount=amount-wallet.usepriorityLevelWithMaxLamports
-                
-            print(f"кошелек {wallet.wallet.get_public_key()} покупка на {buy_amount} lamports")
-        
-        
-            quote = await Jupiter.get_swap_quote(self.main_token,self.use_token,buy_amount)
+                buy_amount = amount - maximum_commission
 
-            swap=await Jupiter.swap_tokens(wallet.wallet.keypair,
-                                      quote,
-                                      priorityLevelWithMaxLamports={"maxLamports": wallet.usepriorityLevelWithMaxLamports,
-                                                                    "priorityLevel": "veryHigh"})
-            
-            sign_trans=await wallet.wallet.sign_transaction_token(swap)
-            
-            
-            # НАДО СПРОСИТЬ ПРОДОЛЖАТЬ ИЛИ НЕТ
-            if sign_trans is None:
+            print(f"Кошелек {wallet.wallet.get_public_key()} покупает токены на {buy_amount} lamports.")
 
-                print(f"КОШЕЛЕК {wallet.wallet.name} НЕ СМОЖЕТ КУПИТЬ!!!")
+            try:
+                quote = await Jupiter.get_swap_quote(
+                    self.main_token,
+                    self.use_token,
+                    buy_amount
+                )
+                swap = await Jupiter.swap_tokens(
+                    wallet.wallet.keypair,
+                    quote,
+                    priorityLevelWithMaxLamports={
+                        "maxLamports": wallet.usepriorityLevelWithMaxLamports,
+                        "priorityLevel": "veryHigh"
+                    }
+                )
 
-            list_sign_transactions.append(sign_trans)
+                sign_trans = await wallet.wallet.sign_transaction_token(swap)
+
+                if sign_trans is None:
+                    print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
+                    if not await confirmation_callback(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n Пропустить кошелек {wallet.wallet.name}?"):
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+
+                list_sign_transactions.append((wallet.wallet, sign_trans))
+            except Exception as e:
+                print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
+                if not await confirmation_callback(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n Пропустить кошелек {wallet.wallet.name} после ошибки?"):
+                    print("Прерывание выполнения по запросу пользователя.")
+                    return
+
+        # Отправка транзакций
+        await self._send_signed_transactions(list_sign_transactions, confirmation_callback)
         
-        # НАДО ВЫВЕСТИ В ОТДЕЛЬНУЮ ФУНКЦИЮ
-        for wallet,transaction in zip(self.use_wallets,list_sign_transactions):
-            if transaction is not None:
-                signature = await wallet.wallet.send_transaction_token(transaction,self.client)
-                wallet.wallet.test_transaction(signature,self.client)
-                print(signature)
+        
+
+    async def _send_signed_transactions(self, signed_transactions: list[tuple[Wallet,VersionedTransaction]], confirmation_callback):
+        """
+        Отправляет подписанные транзакции и проверяет их статус.
+
+        :param signed_transactions: Список кортежей (кошелек, подписанная транзакция).
+        :param confirmation_callback: Функция для подтверждения действия.
+        """
+        for wallet, transaction in signed_transactions:
+            try:
+                signature = await wallet.send_transaction_token(transaction, self.client)
+                await wallet.test_transaction(signature, self.client)
+                print(f"Транзакция для кошелька {wallet.name} успешно отправлена. Signature: {signature}")
+            except Exception as e:
+                print(f"Ошибка при отправке транзакции для кошелька {wallet.name}: {e}")
+                if not await confirmation_callback(f"Ошибка при отправке транзакции для кошелька {wallet.name}: {e}\n Продолжить выполнение после ошибки?"):
+                    print("Прерывание выполнения по запросу пользователя.")
+                    return
+
         
         
         
         
+async def main():        
+
+    solana_manager = await SolanaManager.create()
+    
+    await solana_manager.create_wallets(2)
+    print(solana_manager.wallets)
         
         
-        
-        
+if __name__=="__main__":
+    
+    asyncio.run(main())
