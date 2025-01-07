@@ -71,8 +71,10 @@ class Jupiter:
         payload = {
             "userPublicKey": str(pubkey),
             "quoteResponse": quote_response,
-            "wrapUnwrapSOL": True,
-            "dynamicSlippage": {"maxBps": 300}
+            "wrapAndUnwrapSol": True,
+            "dynamicSlippage": {"maxBps": 1000},
+            "dynamicComputeUnitLimit":True
+
         }
 
         # Add prioritization parameters based on input

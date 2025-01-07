@@ -45,27 +45,38 @@ class Wallet:
             self.is_master = is_master
             self.balance: int = 0
             self.tokens: TokensData = None
+            
         except Exception as e:
             print(f"Ошибка при инициализации кошелька: {e}")
+            
 
-    async def get_token_account_by_owner(self, client: AsyncClient) -> TokensData:
+    async def get_token_account_by_owner(self,client:AsyncClient) -> TokensData:
         """
         Получение токен-аккаунтов, принадлежащих владельцу этого кошелька.
         
         :param client: Асинхронный клиент для взаимодействия с блокчейном.
         :return: Список токен-аккаунтов.
         """
-        try:
-            tokens = await client.get_token_accounts_by_owner_json_parsed(
-                self.keypair.pubkey(),
-                TokenAccountOpts(program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
-            )
-            self.tokens = parse_rpc_response(tokens)
-            return self.tokens
-        except Exception as e:
-            print(f"Ошибка при получении токен-аккаунтов: {e}")
 
-    async def get_token_account_balance(self, client: AsyncClient):
+        # try:
+        tokens_not_pars = await client.get_token_accounts_by_owner_json_parsed(
+            self.keypair.pubkey(),
+            TokenAccountOpts(program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
+        )
+        
+        
+
+
+
+        self.tokens = parse_rpc_response(tokens_not_pars)
+        # await asyncio.sleep(2)  # Задержка 100 мс
+        
+        return self.tokens
+        # except Exception as e:
+        #     print(f"Ошибка при получении токен-аккаунтов: {e}")
+        
+
+    async def get_token_account_balance(self,client:AsyncClient):
         """
         Получение баланса токен-аккаунта кошелька.
         
@@ -77,7 +88,7 @@ class Wallet:
         except Exception as e:
             print(f"Ошибка при получении баланса токен-аккаунта: {e}")
 
-    async def get_account_info(self, client: AsyncClient):
+    async def get_account_info(self,client:AsyncClient):
         """
         Получение информации об аккаунте кошелька.
         
@@ -89,7 +100,7 @@ class Wallet:
         except Exception as e:
             print(f"Ошибка при получении информации об аккаунте: {e}")
 
-    async def get_balance(self, client: AsyncClient) -> int:
+    async def get_balance(self,client:AsyncClient) -> int:
         """
         Получение общего баланса SOL кошелька.
         
@@ -99,11 +110,11 @@ class Wallet:
         try:
             balance = await client.get_balance(self.keypair.pubkey())
             self.balance = balance.value
-            return balance
+            return self.balance
         except Exception as e:
             print(f"Ошибка при получении баланса кошелька: {e}")
 
-    async def get_latest_blockhash(self, client: AsyncClient):
+    async def get_latest_blockhash(self,client:AsyncClient):
         """
         Получение последнего блокхеша для выполнения транзакций.
         
@@ -116,7 +127,7 @@ class Wallet:
             print(f"Ошибка при получении последнего блокхеша: {e}")
 
     @measure_time
-    async def transfer_token(self, quote_response, client: AsyncClient):
+    async def transfer_token(self, quote_response,client:AsyncClient):
         """
         Осуществление обмена токенов по заданному котировочному ответу.
         
@@ -134,13 +145,13 @@ class Wallet:
                 preflight_commitment="confirmed",
                 max_retries=3,
             )
-            return await self.send_transaction_token(signed_txn, opts, client)
+            return await self.send_transaction_token(signed_txn,client, opts)
         except Exception as e:
             print(f"Ошибка при обмене токенов: {e}")
 
     
     @measure_time
-    async def transfer_between_wallet(self, receiver: Pubkey, lamports: int, client: AsyncClient):
+    async def transfer_between_wallet(self, receiver: Pubkey, lamports: int,client:AsyncClient):
         """
         Перевод SOL на указанный адрес.
         
@@ -168,7 +179,7 @@ class Wallet:
             print(f"Ошибка при переводе SOL: {e}")
 
     @measure_time
-    async def send_transaction_between_wallet(self, txn: VersionedTransaction, client: AsyncClient):
+    async def send_transaction_between_wallet(self, txn: VersionedTransaction,client:AsyncClient):
         """
         Отправка указанной транзакции.
         
@@ -200,10 +211,10 @@ class Wallet:
             print(f"Ошибка при подписании транзакции токена: {e}")
 
     @measure_time
-    async def send_transaction_token(self, signed_txn: VersionedTransaction, client: AsyncClient, opts: TxOpts = TxOpts(
+    async def send_transaction_token(self, signed_txn: VersionedTransaction,client:AsyncClient, opts: TxOpts = TxOpts(
         skip_preflight=False,
         preflight_commitment="confirmed",
-        max_retries=3,
+        # max_retries=2,
     )) -> Signature:
         """
         Отправка транзакции токена с учетом приоритизации и дополнительных опций.
@@ -215,11 +226,12 @@ class Wallet:
         """
         try:
             result = await client.send_raw_transaction(bytes(signed_txn), opts)
+
             return result.value
         except Exception as e:
             print(f"Ошибка при отправке транзакции токена: {e}")
 
-    async def test_transaction(self, txid: Signature, client: AsyncClient):
+    async def test_transaction(self, txid: Signature,client:AsyncClient):
         """
         Тестирует транзакцию на подтверждение в сети.
         
@@ -227,18 +239,18 @@ class Wallet:
         :param client: Асинхронный клиент для взаимодействия с блокчейном.
         :return: Подтверждение успешности транзакции.
         """
-        print(f"Transaction: https://explorer.solana.com/tx/{txid}")
+        print(f"Transaction: https://solscan.io/tx/{txid}")
         print("Ожидание подтверждения...")
 
         try:
-            await asyncio.wait_for(client.confirm_transaction(txid, commitment="confirmed", sleep_seconds=1), timeout=3)
-            print(f"Подтверждена: https://explorer.solana.com/tx/{txid}")
+            await asyncio.wait_for(client.confirm_transaction(txid, commitment="confirmed", sleep_seconds=1), timeout=10)
+            print(f"Подтверждена: https://solscan.io/tx/{txid}")
             return True
         except asyncio.TimeoutError:
-            print("Транзакция не подтверждена в течение 3 секунд.")
+            print("Транзакция не подтверждена в течение 10 секунд.")
             return False
 
-    async def find_transaction_error(self, txid: Signature, client: AsyncClient) -> dict:
+    async def find_transaction_error(self, txid: Signature,client:AsyncClient) -> dict:
         """
         Ищет ошибку в транзакции.
         
