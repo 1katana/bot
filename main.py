@@ -5,12 +5,7 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 from ui import Ui_MainWindow 
 from wallet_item_ui import Ui_MyWidget
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+    QMetaObject, QObject,QUrl, Qt)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QLineEdit,
     QSizePolicy, QToolButton, QWidget, QVBoxLayout, QScrollArea)
 import asyncio
@@ -24,51 +19,20 @@ from PySide6.QtGui import QTextCursor
 from dataclases.utils import UseClases
 from wallet import Wallet
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QMessageBox
-from functools import partial
+from converter import *
 
-class Worker(QThread):
-    result = Signal(str)
-    confirmation_requested = Signal(str)
-    confirmation_result = Signal(bool)
-
-    def __init__(self, solana_manager, task, *args, **kwargs):
-        super().__init__()
-
-        # Извлекаем use_callback из kwargs
-        use_callback = kwargs.pop('use_callback', False)
-        
-        # Пропускаем callable аргументы, если они присутствуют
-        args = [arg for arg in args if not callable(arg)]
-        
-        # Сохраняем параметры
-        self.solana_manager = solana_manager
-        self.task = task
-        self.args = args
-        self.kwargs = kwargs
-        
-        # Если требуется callback, подключаем его и передаем в task
-        if use_callback:
-            # Подключаем сигнал для обработки подтверждения
-            self.confirmation_requested.connect(self.confirmation_callback)
-
-            self.args.append(self.confirmation_callback)
-        
-    def run(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.async_run())
-
-    async def async_run(self):
-        # Выполнение асинхронной задачи
-        print("Executing task with args:", self.args, "kwargs:", self.kwargs)
-
-        result = await self.task(*self.args, **self.kwargs)
-        self.result.emit(result)
+from qasync import QEventLoop
 
 
-    def confirmation_callback(self, message: str):
-        # Эмулируем запрос на подтверждение с использованием GUI
-        self.confirmation_requested.emit(message)
+def parsing_number(text: str,default):
+    text=text.replace(" ","")
+    if text=="":
+        return default
+    else:
+        try:
+            return float(text)
+        except ValueError:
+            print(f"{text} - НЕ ЧИСЛО")
 
 
 
@@ -95,14 +59,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.webEngineView.setUrl(QUrl(self.BASE_URL))
 
         # Connect buttons to functions
-        self.add_wallet_button.clicked.connect(self.add_wallet)
-        self.raspr_button.clicked.connect(self.distribute_funds)
-        self.sobr_button.clicked.connect(self.collect_funds)
-        self.create_wallets.clicked.connect(self.create_wallets_fun)
-        self.load_direct.clicked.connect(self.load_from_dir)
-        self.use_token_adress.clicked.connect(self.use_token)
-        self.buy_button.clicked.connect(self.buy_token)
-        self.sell_button.clicked.connect(self.sell_token)
+        self.add_wallet_button.clicked.connect(lambda: asyncio.create_task(self.add_wallet()))
+        self.raspr_button.clicked.connect(lambda: asyncio.create_task(self.distribute_funds()))
+        self.sobr_button.clicked.connect(lambda: asyncio.create_task(self.collect_funds()))
+        self.create_wallets.clicked.connect(lambda: asyncio.create_task(self.create_wallets_fun()))
+        self.load_direct.clicked.connect(lambda: asyncio.create_task(self.load_from_dir()))
+        self.use_token_adress.clicked.connect(lambda: asyncio.create_task(self.use_token()))
+        self.buy_button.clicked.connect(lambda: asyncio.create_task(self.buy_token()))
+        self.sell_button.clicked.connect(lambda: asyncio.create_task(self.sell_token()))
         
         
         
@@ -127,7 +91,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Добавить новые виджеты для каждого кошелька
         for wallet in self.solana_manager.wallets:
-            widget = MyWidget(solana_manager=self.solana_manager, start_task=self.start_task, parent=self)
+            widget = MyWidget(solana_manager=self.solana_manager, parent=self)
             widget.view(wallet)
             self.scroll_Wallets.addWidget(widget)
             
@@ -135,90 +99,97 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     @Slot()
-    def add_wallet(self):
+    async def add_wallet(self):
         secret_key = self.input_secret.text()
-        self.start_task(self.solana_manager.add_wallet, secret_key)
+        # self.start_task(self.solana_manager.add_wallet, secret_key)
+        await self.solana_manager.add_wallet(secret_key)
+        self.populate_wallets()
+
+    @Slot()
+    async def distribute_funds(self):
+        text=self.buy_sol_input.text()
+        
+        try:
+            amount=parsing_number(text,-1)
+            if amount !=-1:
+                amount=sol_to_lamports(amount)
+            await self.solana_manager.distribute_funds(amount)
+        except Exception:
+            print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
+
+    @Slot()
+    async def collect_funds(self):
+        await self.solana_manager.collect_funds_to_master()
 
 
     @Slot()
-    def distribute_funds(self):
-        self.start_task(self.solana_manager.distribute_funds)
-
-
-    @Slot()
-    def collect_funds(self):
-        self.start_task(self.solana_manager.collect_funds_to_master)
-
-
-    @Slot()
-    def create_wallets_fun(self):
+    async def create_wallets_fun(self):
         num_wallets = self.spinBox.value()
-        self.start_task(self.solana_manager.create_wallets, num_wallets)
-
-
-    @Slot()
-    def load_from_dir(self):
-        self.start_task(self.solana_manager.load_from_dir)
-
+        await self.solana_manager.create_wallets(num_wallets)
+        self.populate_wallets()
 
     @Slot()
-    def use_token(self):
-        token_address = self.token_adress.text()
-        self.start_task(self.solana_manager.set_use_token, token_address)
+    async def load_from_dir(self):
+        await self.solana_manager.load_from_dir()
+        self.populate_wallets()
+
+    @Slot()
+    async def use_token(self):
+        token_address = self.token_adress.text().replace(" ","")
+        if token_address=="":
+            print("ВВЕДИТЕ ТОКЕН!!!")
+        await self.solana_manager.set_use_token(token_address)
+        print(self.solana_manager.use_token)
         self.webEngineView.setUrl(QUrl(self.BASE_URL+"/token/"+token_address))
 
     @Slot()
-    def buy_token(self):
-        amount = int(self.buy_sol_input.text())
-        self.start_task(self.solana_manager.buy_token, amount, use_callback=True)
+    async def buy_token(self):
+        text = self.buy_sol_input.text()
+        try:
+            amount=parsing_number(text,0)
+            if amount !=0:
+                amount=sol_to_lamports(amount)
+                await self.solana_manager.buy_token( amount,self.confirmation_callback)
+        except Exception:
+            print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
 
 
     @Slot()
-    def sell_token(self):
-        amount = int(self.sell_input.text())
-        self.start_task(self.solana_manager.sell_token,amount, use_callback=True)
-
-
-    # def start_task(self, task, *args, **kwargs):
-    #     self.worker = Worker(self.solana_manager, task, *args, **kwargs)
-    #     self.worker.result.connect(self.update_console)
-    #     self.worker.result.connect(self.populate_wallets)
-    #     self.worker.start()
-    
-    def show_confirmation_dialog(self, message: str):
-        # Вызов подтверждения через QMessageBox в главном потоке
-        reply = QMessageBox.question(self, 'Confirmation', message,
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        self.worker.confirmation_result.emit(reply == QMessageBox.Yes)
-
-    def handle_confirmation_result(self, confirmed: bool):
-        if confirmed:
-            print("Пользователь подтвердил действие.")
-        else:
-            print("Пользователь отменил действие.")
+    async def sell_token(self):
+        text = self.sell_input.text()
+        try:
+            amount=int(parsing_number(text,-1))
+            await self.solana_manager.sell_token(amount, self.show_confirmation_dialog)
+        except Exception:
+            print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
         
-    def start_task(self, task, *args, **kwargs):
+
+    async def show_confirmation_dialog(self, message: str):
+        # Create the QMessageBox
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setText(message)
+        msg_box.setWindowTitle('Confirmation')
+
+        # Add custom buttons
+        stop_button = msg_box.addButton('Продолжить', QMessageBox.NoRole)
+        continue_button = msg_box.addButton('Прекратить', QMessageBox.YesRole)
         
-        # Создаем объект Worker
-        self.worker = Worker(self.solana_manager, task, *args, **kwargs)
-        self.worker.result.connect(self.update_console)
-        self.worker.result.connect(self.populate_wallets)
-        self.worker.confirmation_requested.connect(self.show_confirmation_dialog)
 
-        self.worker.start()
+        # Show the message box and wait for user interaction
+        msg_box.exec_()
 
-    @Slot(bool)
-    def handle_confirmation_result(self, confirmed: bool):
-        if confirmed:
-            print("User confirmed the action.")
-            # Продолжить выполнение задачи
-        else:
-            print("User canceled the action.")
-            # Отменить выполнение задачи
+        # Determine which button was clicked
+        clicked_button = msg_box.clickedButton()
 
-    @Slot(str)
-    def update_console(self, message):
-        self.console.appendPlainText(message)
+        if clicked_button == continue_button:
+            return True
+        elif clicked_button == stop_button:
+            return False
+
+    # @Slot(str)
+    # def update_console(self, message):
+    #     self.console.appendPlainText(message)
         
     @Slot(str)
     def update_console(self, text):
@@ -227,22 +198,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.console.insertPlainText(text)
         self.console.ensureCursorVisible()  # Делаем видимой текущую позицию курсора
 
+    async def confirmation_callback(self, message: str) -> bool:
+        user_input = input(f"{message} (y/n): ").strip().lower()
+        return user_input in {"y", "yes"}
+
 
 
 
 class MyWidget(QWidget, Ui_MyWidget):
-    def __init__(self,solana_manager:SolanaManager,start_task, parent:MainWindow =None):
+    def __init__(self,solana_manager:SolanaManager, parent:MainWindow =None):
         super(MyWidget, self).__init__(parent)
         self.setupUi(self)
         self.wallet_instance = None
         self.solana_manager=solana_manager
-        self.start_task=start_task
 
         self.parentMain=parent
         
         
-        self.is_master_button.clicked.connect(self.toggle_master_wallet)
-        self.delete_button.clicked.connect(self.delete_wallet)
+        self.is_master_button.clicked.connect(lambda: asyncio.create_task(self.toggle_master_wallet()))
+        self.delete_button.clicked.connect(lambda: asyncio.create_task(self.delete_wallet()))
     
     @Slot(UseClases)
     def view(self, wallet: UseClases):
@@ -251,40 +225,46 @@ class MyWidget(QWidget, Ui_MyWidget):
         self.is_master_button.setText("MASTER" if wallet.wallet.is_master else "SIMPLE")
         self.name.setText(wallet.wallet.name)
         self.adress.setText(str(wallet.wallet.get_public_key()))
-        self.balance_sol.setText(str(wallet.wallet.balance))
+        self.balance_sol.setText(str(lamports_to_sol(wallet.wallet.balance)))
         self.balance_use.setText("НЕ МОГУ")
-        self.priority.setText(str(wallet.usepriorityLevelWithMaxLamports))
+        self.priority.setText(str(lamports_to_sol(wallet.usepriorityLevelWithMaxLamports)))
         
                 # Подключите сигналы к слотам
         wallet.is_use_changed.connect(self.update_use_display)
-        wallet.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
+        # wallet.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
 
-        self.use.stateChanged.connect(self.update_use)
+        self.use.stateChanged.connect(lambda: asyncio.create_task(self.update_use()))
+        
         self.priority.textChanged.connect(self.update_priority)
 
     
-    def update_use(self, state):
+    async def update_use(self, state):
         if self.wallet_instance:
             self.wallet_instance.is_use = state == 2  # 2 соответствует состоянию "включено"
-            self.start_task(self.solana_manager.init_wallets)
+            await self.solana_manager.init_wallets()
             
 
-    def toggle_master_wallet(self):
+    async def toggle_master_wallet(self):
         if self.wallet_instance:
             is_master = self.is_master_button.text() == "SIMPLE"
-            self.start_task(self.solana_manager.set_master_wallet,self.wallet_instance.wallet, is_master)
+            await self.solana_manager.set_master_wallet(self.wallet_instance.wallet, is_master)
             self.parentMain.populate_wallets()
             
-    def delete_wallet(self):
+    async def delete_wallet(self):
         if self.wallet_instance:
-            self.start_task(self.solana_manager.delete_wallet,self.wallet_instance.wallet)
+            await self.solana_manager.delete_wallet(self.wallet_instance.wallet)
+            self.parentMain.populate_wallets()
             
     @Slot(str)
     def update_priority(self, text):
         if self.wallet_instance:
             try:
-                value = int(text)
-                self.wallet_instance.usepriorityLevelWithMaxLamports = value
+                value=parsing_number(text,4000000/1_000_000_000)
+                
+                lamports=sol_to_lamports(value)
+                
+                self.wallet_instance.usepriorityLevelWithMaxLamports = lamports
+                self.priority.setText(str(lamports))
             except ValueError:
                 # Обработка некорректного ввода, если необходимо
                 pass
@@ -292,8 +272,10 @@ class MyWidget(QWidget, Ui_MyWidget):
     def update_use_display(self, value):
         self.use.setChecked(value)
 
-    def update_priority_display(self, value):
-        self.priority.setText(str(value))
+    # def update_priority_display(self, value):
+    #     self.priority.setText(str(value))
+        
+    
 
 
 
@@ -301,11 +283,19 @@ class MyWidget(QWidget, Ui_MyWidget):
 
 
 async def main():
-    app = QApplication([])
     solana_manager = await SolanaManager.create()
+
+    app = QApplication([])
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+
     window = MainWindow(solana_manager)
     window.show()
-    app.exec()
+    
+    with loop:
+        await loop.run_forever()
+        if window.close():
+            loop.close()
 
 if __name__ == "__main__":
     asyncio.run(main())

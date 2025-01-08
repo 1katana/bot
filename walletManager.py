@@ -93,9 +93,12 @@ class WalletManager:
         return wallet
 
     async def get_wallet(self, public_key: str) -> Optional[Wallet]:
-        for wallet in self.wallets:
-            if str(wallet.get_public_key()) == public_key:
-                return wallet
+        try:
+            for wallet in self.wallets:
+                if str(wallet.get_public_key()) == public_key:
+                    return wallet
+        except Exception as e:
+            print(e)
         return None
 
     async def set_master_wallet(self, public_key: str,is_master:bool):

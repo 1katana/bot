@@ -50,7 +50,7 @@ class Wallet:
             print(f"Ошибка при инициализации кошелька: {e}")
             
 
-    async def get_token_account_by_owner(self,client:AsyncClient) -> TokensData:
+    async def get_token_account_by_owner(self,mint:str,client:AsyncClient) -> TokensData:
         """
         Получение токен-аккаунтов, принадлежащих владельцу этого кошелька.
         
@@ -61,7 +61,7 @@ class Wallet:
         # try:
         tokens_not_pars = await client.get_token_accounts_by_owner_json_parsed(
             self.keypair.pubkey(),
-            TokenAccountOpts(mint=Pubkey.from_string("APBcWeYBwkBPMtyEj1QGy1AFzEqnYcQcVYCQofjwpump"),program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
+            TokenAccountOpts(mint=Pubkey.from_string(mint),program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
         )
         
         

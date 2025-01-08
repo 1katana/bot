@@ -230,10 +230,7 @@ class SolanaManager:
             print(f"Непредвиденная ошибка: {e}")
     
     
-    async def sell_token(self, amount,confirmation_callback):
-        print(confirmation_callback)
-        list_sign_transactions = []
-        
+    async def sell_token(self, amount,confirmation_callback):     
         # reqs=[]
         # pars=[]
         
@@ -241,17 +238,17 @@ class SolanaManager:
         # for wallet in self.use_wallets:
             
         #     reqs.append(self.clientCore._get_token_accounts_by_owner_json_parsed_body(wallet.wallet.get_public_key(),
-        #                                                                               TokenAccountOpts(program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")),None))
+        #                                                                               TokenAccountOpts(mint=Pubkey.from_string("APBcWeYBwkBPMtyEj1QGy1AFzEqnYcQcVYCQofjwpump"),program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")),None))
         #     pars.append(GetTokenAccountsByOwnerJsonParsedResp)
         
         # balances=await self.AsyncHTTPProvider.make_batch_request(tuple(reqs),tuple(pars))
 
-
+        list_sign_transactions=[]
         
-        for wallet in self.use_wallets:
+        for i,wallet in enumerate(self.use_wallets):
             
             if amount==-1:
-                tokens =await wallet.wallet.get_token_account_by_owner(self.client)
+                tokens = await wallet.wallet.get_token_account_by_owner(self.use_token,self.client)
                 
                 token_balance=None
                 
@@ -261,8 +258,10 @@ class SolanaManager:
                 
                 if token_balance is None:
                     print(f"{wallet.wallet.name} Такого токена нет")
-                    if not await confirmation_callback(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n Пропустить кошелек {wallet.wallet.name}?"):
-                        print("Прерывание выполнения по запросу пользователя.")
+                    status=await confirmation_callback(f"Кошелек {wallet.wallet.name} не имеет таких токенов!!!\n Пропустить кошелек {wallet.wallet.name}?")
+                    print(status)
+                    if status:
+                        print()
                         return
                     continue
             else:
@@ -325,14 +324,15 @@ class SolanaManager:
 
             # Запрос первой и второй котировок для расчетов
             try:
-                quote_to_buy = await Jupiter.get_swap_quote(
-                    self.main_token,
-                    self.use_token,
-                    amount
-                )
+                
                 quote_to_reverse = await Jupiter.get_swap_quote(
                     self.use_token,
                     self.main_token,
+                    amount
+                )
+                quote_to_buy = await Jupiter.get_swap_quote(
+                    self.main_token,
+                    self.use_token,
                     amount
                 )
             except Exception as e:
