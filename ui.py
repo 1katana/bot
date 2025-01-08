@@ -116,12 +116,17 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6.addWidget(self.load_direct)
 
+        self.update = QPushButton(self.groupBox)
+        self.update.setObjectName(u"update")
+
+        self.verticalLayout_6.addWidget(self.update)
+
         self.scrollArea = QScrollArea(self.groupBox)
         self.scrollArea.setObjectName(u"scrollArea")
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 540, 364))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 540, 334))
         self.scroll_Wallets = QVBoxLayout(self.scrollAreaWidgetContents)
         self.scroll_Wallets.setObjectName(u"scroll_Wallets")
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
@@ -225,7 +230,7 @@ class Ui_MainWindow(object):
         sizePolicy2.setHeightForWidth(self.console.sizePolicy().hasHeightForWidth())
         self.console.setSizePolicy(sizePolicy2)
         self.console.setMaximumSize(QSize(16777215, 16777215))
-        self.console.setReadOnly(True)
+        self.console.setReadOnly(False)
 
         self.verticalLayout_4.addWidget(self.console)
 
@@ -251,6 +256,7 @@ class Ui_MainWindow(object):
         self.sobr_button.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043e\u0431\u0440\u0430\u0442\u044c \u0434\u0435\u043d\u044c\u0433\u0438", None))
         self.create_wallets.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043a\u043e\u0448\u0435\u043b\u044c\u043a\u0438", None))
         self.load_direct.setText(QCoreApplication.translate("MainWindow", u"\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0438\u0437 \u0434\u0438\u0440\u0435\u043a\u0442\u043e\u0440\u0438\u0438", None))
+        self.update.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("MainWindow", u"\u0418\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0435\u043c\u044b\u0439 \u0442\u043e\u043a\u0435\u043d", None))
         self.token_adress.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Token address", None))
         self.use_token_adress.setText(QCoreApplication.translate("MainWindow", u"\u0418\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u044c \u0442\u043e\u043a\u0435\u043d", None))

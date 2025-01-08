@@ -61,7 +61,7 @@ class Wallet:
         # try:
         tokens_not_pars = await client.get_token_accounts_by_owner_json_parsed(
             self.keypair.pubkey(),
-            TokenAccountOpts(program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
+            TokenAccountOpts(mint=Pubkey.from_string("APBcWeYBwkBPMtyEj1QGy1AFzEqnYcQcVYCQofjwpump"),program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
         )
         
         

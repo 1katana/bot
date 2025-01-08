@@ -29,11 +29,11 @@ class SolanaManager:
         
         
         self.main_token="So11111111111111111111111111111111111111112"
-        self.use_token:str
+        self.use_token:str=""
         
         
-        
-
+    async def set_use_token(self, use_token: str):
+        self.use_token = use_token
     
     async def init_wallets(self):
 
@@ -96,17 +96,17 @@ class SolanaManager:
        
         await self.wallet_manager.add_wallet(secret_key=secret_key) 
             
-        self.init_wallets()
+        await self.init_wallets()
         
     async def set_master_wallet(self,wallet:Wallet,is_master: bool):
         await self.wallet_manager.set_master_wallet(str(wallet.get_public_key()),is_master)
-        self.init_wallets()
+        await self.init_wallets()
         
     async def delete_wallet(self,wallet:Wallet):
         
         await self.wallet_manager.delete_wallet(str(wallet.get_public_key()))
         
-        self.init_wallets()
+        await self.init_wallets()
         
     async def load_from_dir(self):
         
@@ -230,7 +230,8 @@ class SolanaManager:
             print(f"Непредвиденная ошибка: {e}")
     
     
-    async def sell_token(self, confirmation_callback,amount:int=-1):
+    async def sell_token(self, amount,confirmation_callback):
+        print(confirmation_callback)
         list_sign_transactions = []
         
         # reqs=[]
@@ -252,12 +253,18 @@ class SolanaManager:
             if amount==-1:
                 tokens =await wallet.wallet.get_token_account_by_owner(self.client)
                 
+                token_balance=None
+                
                 for token in tokens.tokens:
                     if token.mint==self.use_token:
                         token_balance=token.token_amount.amount
                 
                 if token_balance is None:
                     print(f"{wallet.wallet.name} Такого токена нет")
+                    if not await confirmation_callback(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n Пропустить кошелек {wallet.wallet.name}?"):
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
             else:
                 token_balance=amount
             

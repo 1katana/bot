@@ -16,19 +16,21 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
-    QLineEdit, QSizePolicy, QToolButton, QVBoxLayout,
-    QWidget)
+    QLineEdit, QPushButton, QSizePolicy, QToolButton,
+    QVBoxLayout, QWidget)
 
 class Ui_MyWidget(object):
     def setupUi(self, MyWidget):
         if not MyWidget.objectName():
             MyWidget.setObjectName(u"MyWidget")
-        MyWidget.resize(513, 42)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        MyWidget.resize(513, 44)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(MyWidget.sizePolicy().hasHeightForWidth())
         MyWidget.setSizePolicy(sizePolicy)
+        MyWidget.setMinimumSize(QSize(0, 0))
+        MyWidget.setMaximumSize(QSize(16777215, 50))
         MyWidget.setAutoFillBackground(False)
         MyWidget.setStyleSheet(u"\n"
 "background-color: rgb(55, 55, 55);")
@@ -40,14 +42,25 @@ class Ui_MyWidget(object):
         self.groupBox.setObjectName(u"groupBox")
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
         self.groupBox.setSizePolicy(sizePolicy)
+        self.groupBox.setMinimumSize(QSize(0, 0))
+        self.groupBox.setMaximumSize(QSize(16777215, 50))
         self.horizontalLayout = QHBoxLayout(self.groupBox)
         self.horizontalLayout.setSpacing(5)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(5, 9, 5, 9)
-        self.checkBox = QCheckBox(self.groupBox)
-        self.checkBox.setObjectName(u"checkBox")
+        self.use = QCheckBox(self.groupBox)
+        self.use.setObjectName(u"use")
+        self.use.setIconSize(QSize(16, 16))
+        self.use.setChecked(False)
 
-        self.horizontalLayout.addWidget(self.checkBox)
+        self.horizontalLayout.addWidget(self.use)
+
+        self.is_master_button = QPushButton(self.groupBox)
+        self.is_master_button.setObjectName(u"is_master_button")
+        self.is_master_button.setMinimumSize(QSize(20, 0))
+        self.is_master_button.setMaximumSize(QSize(65, 16777215))
+
+        self.horizontalLayout.addWidget(self.is_master_button)
 
         self.name = QLineEdit(self.groupBox)
         self.name.setObjectName(u"name")
@@ -64,11 +77,8 @@ class Ui_MyWidget(object):
 
         self.adress = QLineEdit(self.groupBox)
         self.adress.setObjectName(u"adress")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.adress.sizePolicy().hasHeightForWidth())
-        self.adress.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.adress.sizePolicy().hasHeightForWidth())
+        self.adress.setSizePolicy(sizePolicy)
         self.adress.setReadOnly(True)
 
         self.horizontalLayout.addWidget(self.adress)
@@ -102,14 +112,14 @@ class Ui_MyWidget(object):
 
         self.horizontalLayout.addWidget(self.priority)
 
-        self.toolButton_2 = QToolButton(self.groupBox)
-        self.toolButton_2.setObjectName(u"toolButton_2")
-        self.toolButton_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.toolButton_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.delete_button = QToolButton(self.groupBox)
+        self.delete_button.setObjectName(u"delete_button")
+        self.delete_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.delete_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.WindowClose))
-        self.toolButton_2.setIcon(icon)
+        self.delete_button.setIcon(icon)
 
-        self.horizontalLayout.addWidget(self.toolButton_2)
+        self.horizontalLayout.addWidget(self.delete_button)
 
 
         self.verticalLayout.addWidget(self.groupBox)
@@ -123,12 +133,13 @@ class Ui_MyWidget(object):
     def retranslateUi(self, MyWidget):
         MyWidget.setWindowTitle(QCoreApplication.translate("MyWidget", u"MyWidget", None))
         self.groupBox.setTitle("")
-        self.checkBox.setText("")
+        self.use.setText("")
+        self.is_master_button.setText(QCoreApplication.translate("MyWidget", u"simple", None))
         self.name.setPlaceholderText(QCoreApplication.translate("MyWidget", u"Name", None))
         self.adress.setPlaceholderText(QCoreApplication.translate("MyWidget", u"adress", None))
         self.balance_sol.setPlaceholderText(QCoreApplication.translate("MyWidget", u"balance sol", None))
         self.balance_use.setPlaceholderText(QCoreApplication.translate("MyWidget", u"balance use token", None))
         self.priority.setPlaceholderText(QCoreApplication.translate("MyWidget", u"priority", None))
-        self.toolButton_2.setText(QCoreApplication.translate("MyWidget", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c"))
+        self.delete_button.setText(QCoreApplication.translate("MyWidget", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c"))
     # retranslateUi
 
