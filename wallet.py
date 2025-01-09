@@ -12,7 +12,7 @@ from solders.signature import Signature # type: ignore
 from solders import message
 import json
 from solana.rpc.types import TokenAccountOpts
-from dataclases.tokensData import TokensData,parse_rpc_response
+from dataclases.tokensData import TokensData,parse_rpc_response,TokenInfo,useTokenInfo
 import asyncio
 import time
 import functools
@@ -46,9 +46,15 @@ class Wallet:
             self.balance: int = 0
             self.tokens: TokensData = None
             
+            self.use_token_balance:useTokenInfo=None
+            
         except Exception as e:
             print(f"Ошибка при инициализации кошелька: {e}")
-            
+    
+    
+    # def set_use_token_balance(self,mint:str)
+    
+    
 
     async def get_token_account_by_owner(self,mint:str,client:AsyncClient) -> TokensData:
         """
@@ -57,23 +63,22 @@ class Wallet:
         :param client: Асинхронный клиент для взаимодействия с блокчейном.
         :return: Список токен-аккаунтов.
         """
+        try:
+            tokens_not_pars = await client.get_token_accounts_by_owner_json_parsed(
+                self.keypair.pubkey(),
+                TokenAccountOpts(program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
+            )
+            
+            self.tokens = parse_rpc_response(tokens_not_pars)
+            
+            for token in self.tokens.tokens:
+                if token.mint==mint:
+                    self.use_token_balance=useTokenInfo(True,token)
+            
+            return self.tokens
+        except Exception as e:
+            print("Ошибка загрузки баланса токена")
 
-        # try:
-        tokens_not_pars = await client.get_token_accounts_by_owner_json_parsed(
-            self.keypair.pubkey(),
-            TokenAccountOpts(mint=Pubkey.from_string(mint),program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
-        )
-        
-        
-
-
-
-        self.tokens = parse_rpc_response(tokens_not_pars)
-        # await asyncio.sleep(2)  # Задержка 100 мс
-        
-        return self.tokens
-        # except Exception as e:
-        #     print(f"Ошибка при получении токен-аккаунтов: {e}")
         
 
     async def get_token_account_balance(self,client:AsyncClient):

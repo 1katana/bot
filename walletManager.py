@@ -30,9 +30,14 @@ class WalletManager:
         await self.save_wallet(wallet)
         
     async def delete_wallet(self, public_key: str):
-        wallet=await self.get_wallet(public_key)
-        self.wallets.remove(wallet)
-        await self.save_wallets_to_db()
+        try:
+            wallet=await self.get_wallet(public_key)
+            self.wallets.remove(wallet)
+            await self.save_wallets_to_db()
+            
+            return True
+        except Exception:
+            return False
 
     async def load_wallets_from_dir(self):
         if not os.path.exists(self.wallets_dir):

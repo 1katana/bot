@@ -16,16 +16,16 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayou
 import asyncio
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QTextCursor
-from dataclases.utils import UseClases
+from dataclases.utils import *
 from wallet import Wallet
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QMessageBox
 from converter import *
-
 from qasync import QEventLoop
 
 
 def parsing_number(text: str,default):
     text=text.replace(" ","")
+    text=text.replace(",",".")
     if text=="":
         return default
     else:
@@ -67,7 +67,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.use_token_adress.clicked.connect(lambda: asyncio.create_task(self.use_token()))
         self.buy_button.clicked.connect(lambda: asyncio.create_task(self.buy_token()))
         self.sell_button.clicked.connect(lambda: asyncio.create_task(self.sell_token()))
-        
+        self.update_button.clicked.connect(lambda: asyncio.create_task(solana_manager.update()))
         
         
         # Настройка перенаправления вывода
@@ -83,18 +83,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @Slot()
     def populate_wallets(self):
-        # Очистить текущие виджеты
-        while self.scroll_Wallets.count():
-            item = self.scroll_Wallets.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+        """
+        Обновляет виджеты кошельков, добавляя новые и удаляя устаревшие.
+        """
+        # Получить текущие виджеты
+        current_wallets = {self.scroll_Wallets.itemAt(i).widget().wallet_instance for i in range(self.scroll_Wallets.count())}
 
-        # Добавить новые виджеты для каждого кошелька
-        for wallet in self.solana_manager.wallets:
+        # Получить новые кошельки
+        new_wallets = {UseClassesWrapper(useClass) for useClass in self.solana_manager.wallets}
+
+        # Удалить устаревшие виджеты
+        for wallet in current_wallets - new_wallets:
+            for i in range(self.scroll_Wallets.count()):
+                item = self.scroll_Wallets.itemAt(i)
+                if item.widget().wallet_instance == wallet:
+                    item.widget().deleteLater()
+                    self.scroll_Wallets.removeItem(item)
+                    break
+
+        # Добавить новые виджеты
+        for wallet in new_wallets - current_wallets:
             widget = MyWidget(solana_manager=self.solana_manager, parent=self)
             widget.view(wallet)
             self.scroll_Wallets.addWidget(widget)
-            
+                
     
 
 
@@ -158,8 +170,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     async def sell_token(self):
         text = self.sell_input.text()
         try:
-            amount=int(parsing_number(text,-1))
-            await self.solana_manager.sell_token(amount, self.show_confirmation_dialog)
+            amount=parsing_number(text,-1)
+            await self.solana_manager.sell_token(amount_to_token_units(amount,self.solana_manager.decimals), self.show_confirmation_dialog)
         except Exception:
             print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
         
@@ -206,74 +218,73 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 class MyWidget(QWidget, Ui_MyWidget):
-    def __init__(self,solana_manager:SolanaManager, parent:MainWindow =None):
+    def __init__(self, solana_manager: SolanaManager, parent: MainWindow = None):
         super(MyWidget, self).__init__(parent)
         self.setupUi(self)
         self.wallet_instance = None
-        self.solana_manager=solana_manager
-
-        self.parentMain=parent
-        
+        self.solana_manager = solana_manager
+        self.parentMain = parent
         
         self.is_master_button.clicked.connect(lambda: asyncio.create_task(self.toggle_master_wallet()))
         self.delete_button.clicked.connect(lambda: asyncio.create_task(self.delete_wallet()))
+
+        self.use.stateChanged.connect(self.on_use_state_changed)
     
-    @Slot(UseClases)
-    def view(self, wallet: UseClases):
+    @Slot(UseClasses)
+    def view(self, wallet: UseClasses):
         self.wallet_instance = wallet
+
+        # Настройка начального состояния
         self.use.setChecked(wallet.is_use)
         self.is_master_button.setText("MASTER" if wallet.wallet.is_master else "SIMPLE")
         self.name.setText(wallet.wallet.name)
         self.adress.setText(str(wallet.wallet.get_public_key()))
         self.balance_sol.setText(str(lamports_to_sol(wallet.wallet.balance)))
-        self.balance_use.setText("НЕ МОГУ")
-        self.priority.setText(str(lamports_to_sol(wallet.usepriorityLevelWithMaxLamports)))
         
-                # Подключите сигналы к слотам
-        wallet.is_use_changed.connect(self.update_use_display)
-        # wallet.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
-
-        self.use.stateChanged.connect(lambda: asyncio.create_task(self.update_use()))
-        
-        self.priority.textChanged.connect(self.update_priority)
-
-    
-    async def update_use(self, state):
-        if self.wallet_instance:
-            self.wallet_instance.is_use = state == 2  # 2 соответствует состоянию "включено"
-            await self.solana_manager.init_wallets()
+        if wallet.wallet.use_token_balance is not None:
+            token_balance = wallet.wallet.use_token_balance
+            amount = str(token_units_to_amount(token_balance.tokenInfo.token_amount.amount, self.solana_manager.decimals))
+            if token_balance.confirmation:
+                # Зеленое подчеркивание
+                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid green;")
+            else:
+                # Желтое подчеркивание
+                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid yellow;")
+            self.balance_use.setText(amount)
+        else:
+            # Убираем подчеркивание и задаем стандартный стиль
+            self.balance_use.setStyleSheet("border: none;")
+            self.balance_use.setText("-")
             
+        self.priority.setText(str(lamports_to_sol(wallet.usepriorityLevelWithMaxLamports)))
+
+        # Подключение сигналов
+        wallet.is_use_changed.connect(self.update_use_display)
+        wallet.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
+        
+    def on_use_state_changed(self, state):
+        if self.wallet_instance:
+            self.wallet_instance.is_use = state == 2
 
     async def toggle_master_wallet(self):
         if self.wallet_instance:
             is_master = self.is_master_button.text() == "SIMPLE"
             await self.solana_manager.set_master_wallet(self.wallet_instance.wallet, is_master)
-            self.parentMain.populate_wallets()
-            
+            self.is_master_button.setText("MASTER" if is_master else "SIMPLE")
+            self.wallet_instance.wallet.is_master = is_master
+
     async def delete_wallet(self):
         if self.wallet_instance:
-            await self.solana_manager.delete_wallet(self.wallet_instance.wallet)
-            self.parentMain.populate_wallets()
-            
-    @Slot(str)
-    def update_priority(self, text):
-        if self.wallet_instance:
-            try:
-                value=parsing_number(text,4000000/1_000_000_000)
-                
-                lamports=sol_to_lamports(value)
-                
-                self.wallet_instance.usepriorityLevelWithMaxLamports = lamports
-                self.priority.setText(str(lamports))
-            except ValueError:
-                # Обработка некорректного ввода, если необходимо
-                pass
+            if await self.solana_manager.delete_wallet(self.wallet_instance.wallet):
+                self.parentMain.populate_wallets()
 
-    def update_use_display(self, value):
+    def update_use_display(self, value: bool):
         self.use.setChecked(value)
 
-    # def update_priority_display(self, value):
-    #     self.priority.setText(str(value))
+    def update_priority_display(self, value: int):
+        self.priority.setText(str(lamports_to_sol(value)))
+
+
         
     
 

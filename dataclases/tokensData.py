@@ -2,6 +2,9 @@ from solders.rpc.responses import GetTokenAccountsByOwnerJsonParsedResp
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+
+
+    
 @dataclass
 class TokenAmount:
     amount: int
@@ -9,10 +12,21 @@ class TokenAmount:
     uiAmount: float
     uiAmountString: str
 
+
+
 @dataclass
 class TokenInfo:
     mint: str
     token_amount: TokenAmount
+
+    
+    
+@dataclass
+class useTokenInfo:
+    confirmation: bool
+    tokenInfo:TokenInfo
+    
+    
 
 @dataclass
 class TokensData:

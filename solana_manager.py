@@ -7,7 +7,7 @@ import asyncio
 from solders.transaction import VersionedTransaction
 from wallet import Wallet
 from walletManager import WalletManager
-from dataclases.utils import UseClases
+from dataclases.utils import UseClasses
 from typing import List, Tuple
 from jupiter import Jupiter
 from solana.rpc.providers.async_http import AsyncHTTPProvider
@@ -15,6 +15,9 @@ from solders.rpc.requests import GetTokenAccountsByOwner
 from solders.rpc.responses import GetTokenAccountsByOwnerJsonParsedResp
 from solana.rpc.core import _ClientCore
 from solana.rpc.types import TokenAccountOpts
+from dataclases.tokensData import TokenInfo,useTokenInfo,TokenAmount
+from converter import *
+
 
 class SolanaManager:
     def __init__(self,api_url: str, client: AsyncClient, wallet_manager: WalletManager):
@@ -25,15 +28,18 @@ class SolanaManager:
         self.client:AsyncClient=client
         self.clientCore:_ClientCore=_ClientCore(self.client.commitment)
         self.wallet_manager = wallet_manager
-        self.wallets:list[UseClases]=[]
+        self.wallets:list[UseClasses]=[]
         
         
         self.main_token="So11111111111111111111111111111111111111112"
-        self.use_token:str=""
         
+        self.use_token:str=""
+        self.decimals:int=None
         
     async def set_use_token(self, use_token: str):
         self.use_token = use_token
+        self.decimals=(await self.client.get_token_supply(Pubkey.from_string(use_token))).value.decimals
+        print(self.decimals)
     
     async def init_wallets(self):
 
@@ -54,13 +60,14 @@ class SolanaManager:
         # Добавляем
         for wallet in wallets_to_add:
             # await wallet.init_client(self.api_url)
-            self.wallets.append(UseClases(wallet))
+            self.wallets.append(UseClasses(wallet))
 
 
 
         self.use_wallets = [wallet for wallet in self.wallets if wallet.is_use==True]
 
 
+    
 
     
     @classmethod
@@ -104,9 +111,36 @@ class SolanaManager:
         
     async def delete_wallet(self,wallet:Wallet):
         
-        await self.wallet_manager.delete_wallet(str(wallet.get_public_key()))
+        if await self.wallet_manager.delete_wallet(str(wallet.get_public_key())):
+            await self.init_wallets()
+            return True
+        else:
+            return False
         
-        await self.init_wallets()
+
+    async def update(self):
+        print("\n Загрузка баланса...")
+        async def fetch_balance(wallet):
+            """Обновляет баланс для одного кошелька."""
+            await wallet.wallet.get_balance(self.client)
+
+        async def fetch_token_accounts(wallet: UseClasses):
+            """Обновляет токены для одного кошелька."""
+            await wallet.wallet.get_token_account_by_owner(self.use_token, self.client)
+
+
+        await asyncio.gather(*(fetch_balance(w) for w in self.wallets))
+
+
+
+        
+
+        for wallet in self.wallets:
+            await fetch_token_accounts(wallet)
+            await asyncio.sleep(5)  # Задержка между группами
+        print("\n Загружено")
+        print([[w.wallet.balance,w.wallet.tokens] for w in self.wallets])
+            
         
     async def load_from_dir(self):
         
@@ -248,13 +282,12 @@ class SolanaManager:
         for i,wallet in enumerate(self.use_wallets):
             
             if amount==-1:
-                tokens = await wallet.wallet.get_token_account_by_owner(self.use_token,self.client)
+                token = wallet.wallet.use_token_balance.tokenInfo
                 
                 token_balance=None
-                
-                for token in tokens.tokens:
-                    if token.mint==self.use_token:
-                        token_balance=token.token_amount.amount
+
+                if token.mint==self.use_token:
+                    token_balance=token.token_amount.amount
                 
                 if token_balance is None:
                     print(f"{wallet.wallet.name} Такого токена нет")
@@ -335,6 +368,8 @@ class SolanaManager:
                     self.use_token,
                     amount
                 )
+
+                print("outAmount: ",quote_to_buy["routePlan"][-1]["swapInfo"]["outAmount"])
             except Exception as e:
                 print(f"Ошибка получения котировок для кошелька {wallet.wallet.name}: {e}")
                 continue
@@ -400,12 +435,12 @@ class SolanaManager:
                     return
 
         # Отправка подписанных транзакций
-        await self._send_signed_transactions(list_sign_transactions, confirmation_callback)
+        await self._send_signed_transactions(list_sign_transactions)
 
         
         
 
-    async def _send_signed_transactions(self,signed_transactions: list[tuple[Wallet, VersionedTransaction]], confirmation_callback):
+    async def _send_signed_transactions(self,signed_transactions: list[tuple[Wallet, VersionedTransaction]],quote_to_buy: dict=None):
         """
         Отправляет подписанные транзакции и проверяет их статус.
 
@@ -414,12 +449,20 @@ class SolanaManager:
         """
         async def process_transaction(wallet:Wallet, transaction:VersionedTransaction):
             try:
-                # Отправка транзакции
                 signature = await wallet.send_transaction_token(transaction,self.client)
                 if signature is not None:
-                    print(f"Транзакция для кошелька {wallet.name} успешно отправлена. Signature: {signature}")
+                    print(f"Транзакция для кошелька {wallet.name} отправлена. Signature: {signature}")
                 # Проверка транзакции
-                await wallet.test_transaction(signature,self.client)
+                if await wallet.test_transaction(signature,self.client) and quote_to_buy is not None:
+                    amount=int(quote_to_buy["routePlan"][-1]["swapInfo"]["outAmount"])
+                    ui_amount=token_units_to_amount(amount,self.decimals)
+                    wallet.use_token_balance=useTokenInfo(False,
+                                                          tokenInfo=TokenInfo(self.use_token,
+                                                                              TokenAmount(amount,
+                                                                                          self.decimals,
+                                                                                          ui_amount,str(ui_amount))))
+
+                    
             except Exception as e:
                 print(f"Ошибка при обработке транзакции для кошелька {wallet.name}: {e}")
 
