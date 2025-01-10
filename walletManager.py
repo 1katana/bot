@@ -52,7 +52,7 @@ class WalletManager:
                         data = await file.read()
                         data = json.loads(data)
                         keypair = Keypair.from_bytes(data)
-                        wallet = Wallet(keypair, file_name, False)
+                        wallet = Wallet(keypair, file_name[:-5], False)
                         self.wallets.add(wallet)
                 except (json.JSONDecodeError, KeyError, ValueError) as e:
                     print(f"Ошибка при загрузке кошелька из файла {file_name}: {e}")

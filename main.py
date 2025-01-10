@@ -169,12 +169,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     async def sell_token(self):
         text = self.sell_input.text()
-        try:
-            amount=parsing_number(text,-1)
-            lamp=amount_to_token_units(amount,self.solana_manager.decimals) if amount!=-1 else -1
-            await self.solana_manager.sell_token(lamp, self.show_confirmation_dialog)
-        except Exception:
-            print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
+        amount=parsing_number(text,-1)
+        lamp=amount_to_token_units(amount,self.solana_manager.decimals) if amount!=-1 else -1
+        await self.solana_manager.sell_token(lamp, self.show_confirmation_dialog)
+        # except Exception:
+        #     print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
         
 
     async def show_confirmation_dialog(self, message: str):
@@ -317,16 +316,12 @@ class MyWidget(QWidget, Ui_MyWidget):
             self.balance_use.setStyleSheet("border: none;")
             self.balance_use.setText("-")
 
-        
     
 
 
 
-
-
-
 async def main():
-    solana_manager = await SolanaManager.create()
+    solana_manager = await SolanaManager.create(api_url="https://mainnet.helius-rpc.com/?api-key=69a760dd-80db-4265-9331-e4265298a8f5")
 
     app = QApplication([])
     loop = QEventLoop(app)

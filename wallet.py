@@ -17,7 +17,7 @@ import asyncio
 import time
 import functools
 from PySide6.QtCore import QObject, Signal, Property
-
+import base58
 
 def measure_time(func):
     @functools.wraps(func)
@@ -51,7 +51,7 @@ class Wallet(QObject):
         self._balance: int = 0
         self._use_token_balance:useTokenInfo = None
         self.name = name
-        self.keypair = keypair
+        self.keypair:Keypair = keypair
         self.is_master = is_master
         self.tokens = None
 
@@ -246,9 +246,10 @@ class Wallet(QObject):
 
     @measure_time
     async def send_transaction_token(self, signed_txn: VersionedTransaction,client:AsyncClient, opts: TxOpts = TxOpts(
+        # skip_confirmation=False,
         skip_preflight=False,
         preflight_commitment="confirmed",
-        # max_retries=2,
+        max_retries=3,
     )) -> Signature:
         """
         Отправка транзакции токена с учетом приоритизации и дополнительных опций.
@@ -265,6 +266,9 @@ class Wallet(QObject):
             return result.value
         except Exception as e:
             print(f"Ошибка при отправке транзакции токена: {e}")
+            
+            
+            
 
     async def test_transaction(self, txid: Signature,client:AsyncClient):
         """
@@ -300,6 +304,10 @@ class Wallet(QObject):
     def get_public_key(self):
         """Возвращает публичный ключ кошелька."""
         return self.keypair.pubkey()
+    
+    # def get_private_key(self):
+    #     """Возвращает секретный ключ (32 байта) в формате Base58."""
+    #     private_key_bytes = self.keypair.
 
     def __hash__(self):
         """Генерирует хэш на основе публичного ключа кошелька."""

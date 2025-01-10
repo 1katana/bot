@@ -50,7 +50,7 @@ class Ui_MyWidget(object):
         self.horizontalLayout.setContentsMargins(5, 9, 5, 9)
         self.use = QCheckBox(self.groupBox)
         self.use.setObjectName(u"use")
-        self.use.setIconSize(QSize(16, 16))
+        self.use.setIconSize(QSize(12, 12))
         self.use.setChecked(False)
 
         self.horizontalLayout.addWidget(self.use)
@@ -58,7 +58,7 @@ class Ui_MyWidget(object):
         self.is_master_button = QPushButton(self.groupBox)
         self.is_master_button.setObjectName(u"is_master_button")
         self.is_master_button.setMinimumSize(QSize(20, 0))
-        self.is_master_button.setMaximumSize(QSize(65, 16777215))
+        self.is_master_button.setMaximumSize(QSize(60, 16777215))
 
         self.horizontalLayout.addWidget(self.is_master_button)
 
@@ -70,7 +70,7 @@ class Ui_MyWidget(object):
         sizePolicy1.setHeightForWidth(self.name.sizePolicy().hasHeightForWidth())
         self.name.setSizePolicy(sizePolicy1)
         self.name.setMinimumSize(QSize(50, 0))
-        self.name.setMaximumSize(QSize(80, 16777215))
+        self.name.setMaximumSize(QSize(63, 16777215))
         self.name.setReadOnly(True)
 
         self.horizontalLayout.addWidget(self.name)
@@ -88,7 +88,7 @@ class Ui_MyWidget(object):
         sizePolicy1.setHeightForWidth(self.balance_sol.sizePolicy().hasHeightForWidth())
         self.balance_sol.setSizePolicy(sizePolicy1)
         self.balance_sol.setMinimumSize(QSize(50, 0))
-        self.balance_sol.setMaximumSize(QSize(80, 16777215))
+        self.balance_sol.setMaximumSize(QSize(75, 16777215))
         self.balance_sol.setReadOnly(True)
 
         self.horizontalLayout.addWidget(self.balance_sol)
@@ -98,7 +98,7 @@ class Ui_MyWidget(object):
         sizePolicy1.setHeightForWidth(self.balance_use.sizePolicy().hasHeightForWidth())
         self.balance_use.setSizePolicy(sizePolicy1)
         self.balance_use.setMinimumSize(QSize(50, 0))
-        self.balance_use.setMaximumSize(QSize(100, 16777215))
+        self.balance_use.setMaximumSize(QSize(85, 16777215))
         self.balance_use.setReadOnly(True)
 
         self.horizontalLayout.addWidget(self.balance_use)
@@ -108,7 +108,7 @@ class Ui_MyWidget(object):
         sizePolicy1.setHeightForWidth(self.priority.sizePolicy().hasHeightForWidth())
         self.priority.setSizePolicy(sizePolicy1)
         self.priority.setMinimumSize(QSize(30, 0))
-        self.priority.setMaximumSize(QSize(40, 16777215))
+        self.priority.setMaximumSize(QSize(47, 16777215))
 
         self.horizontalLayout.addWidget(self.priority)
 
@@ -118,6 +118,7 @@ class Ui_MyWidget(object):
         self.delete_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.WindowClose))
         self.delete_button.setIcon(icon)
+        self.delete_button.setIconSize(QSize(12, 12))
 
         self.horizontalLayout.addWidget(self.delete_button)
 

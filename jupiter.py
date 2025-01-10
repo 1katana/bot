@@ -32,8 +32,8 @@ class Jupiter:
         params = {
             "inputMint": input_mint,
             "outputMint": output_mint,
-            "amount": amount,
-            "autoSlippage": "true",
+            "amount": amount
+            # "autoSlippage": "true",
         }
 
         url = f"{cls.BASE_URL}{cls.QUOTE_ENDPOINT}"
@@ -71,9 +71,10 @@ class Jupiter:
         payload = {
             "userPublicKey": str(pubkey),
             "quoteResponse": quote_response,
-            "wrapAndUnwrapSol": True,
-            "dynamicSlippage": {"maxBps": 1000},
-            "dynamicComputeUnitLimit":True
+            "wrapUnwrapSOL": True,
+            "dynamicComputeUnitLimit":True,
+            "dynamicSlippage": {"maxBps": 2000},
+            "asLegacyTransaction": False
 
         }
 

@@ -137,7 +137,7 @@ class SolanaManager:
 
         for wallet in self.wallets:
             await fetch_token_accounts(wallet)
-            await asyncio.sleep(5)  # Задержка между группами
+            # await asyncio.sleep(5)  # Задержка между группами
         print("\n Загружено")
         # print([[w.wallet.balance,w.wallet.tokens] for w in self.wallets])
             
@@ -282,6 +282,17 @@ class SolanaManager:
         for i,wallet in enumerate(self.use_wallets):
             
             if amount==-1:
+                
+                
+                
+                if wallet.wallet.use_token_balance is None:
+                    print(f"{wallet.wallet.name} Такого токена нет")
+                    status=await confirmation_callback(f"Кошелек {wallet.wallet.name} не имеет таких токенов!!!\n Пропустить кошелек {wallet.wallet.name}?")
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+                    
                 token = wallet.wallet.use_token_balance.tokenInfo
                 
                 token_balance=None
