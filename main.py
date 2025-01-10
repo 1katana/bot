@@ -90,7 +90,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         current_wallets = {self.scroll_Wallets.itemAt(i).widget().wallet_instance for i in range(self.scroll_Wallets.count())}
 
         # Получить новые кошельки
-        new_wallets = {UseClassesWrapper(useClass) for useClass in self.solana_manager.wallets}
+        new_wallets = {useClass for useClass in self.solana_manager.wallets}
 
         # Удалить устаревшие виджеты
         for wallet in current_wallets - new_wallets:
@@ -161,7 +161,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             amount=parsing_number(text,0)
             if amount !=0:
                 amount=sol_to_lamports(amount)
-                await self.solana_manager.buy_token( amount,self.confirmation_callback)
+                await self.solana_manager.buy_token( amount,self.show_confirmation_dialog)
         except Exception:
             print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
 
@@ -171,7 +171,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         text = self.sell_input.text()
         try:
             amount=parsing_number(text,-1)
-            await self.solana_manager.sell_token(amount_to_token_units(amount,self.solana_manager.decimals), self.show_confirmation_dialog)
+            lamp=amount_to_token_units(amount,self.solana_manager.decimals) if amount!=-1 else -1
+            await self.solana_manager.sell_token(lamp, self.show_confirmation_dialog)
         except Exception:
             print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
         
@@ -221,50 +222,61 @@ class MyWidget(QWidget, Ui_MyWidget):
     def __init__(self, solana_manager: SolanaManager, parent: MainWindow = None):
         super(MyWidget, self).__init__(parent)
         self.setupUi(self)
-        self.wallet_instance = None
+        self.wallet_instance: UseClasses = None
         self.solana_manager = solana_manager
         self.parentMain = parent
-        
+
         self.is_master_button.clicked.connect(lambda: asyncio.create_task(self.toggle_master_wallet()))
         self.delete_button.clicked.connect(lambda: asyncio.create_task(self.delete_wallet()))
-
         self.use.stateChanged.connect(self.on_use_state_changed)
-    
+        self.priority.editingFinished.connect(self.on_priority_changed)
+
     @Slot(UseClasses)
-    def view(self, wallet: UseClasses):
-        self.wallet_instance = wallet
+    def view(self, useClass: UseClasses):
+        self.wallet_instance = useClass
 
         # Настройка начального состояния
-        self.use.setChecked(wallet.is_use)
-        self.is_master_button.setText("MASTER" if wallet.wallet.is_master else "SIMPLE")
-        self.name.setText(wallet.wallet.name)
-        self.adress.setText(str(wallet.wallet.get_public_key()))
-        self.balance_sol.setText(str(lamports_to_sol(wallet.wallet.balance)))
-        
-        if wallet.wallet.use_token_balance is not None:
-            token_balance = wallet.wallet.use_token_balance
+        self.use.setChecked(self.wallet_instance.is_use)
+        self.is_master_button.setText("MASTER" if self.wallet_instance.wallet.is_master else "SIMPLE")
+        self.name.setText(self.wallet_instance.wallet.name)
+        self.adress.setText(str(self.wallet_instance.wallet.get_public_key()))
+        self.balance_sol.setText(str(lamports_to_sol(self.wallet_instance.wallet.balance)))
+
+        if self.wallet_instance.wallet.use_token_balance is not None:
+            token_balance:useTokenInfo = self.wallet_instance.wallet.use_token_balance
             amount = str(token_units_to_amount(token_balance.tokenInfo.token_amount.amount, self.solana_manager.decimals))
             if token_balance.confirmation:
-                # Зеленое подчеркивание
                 self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid green;")
             else:
-                # Желтое подчеркивание
                 self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid yellow;")
             self.balance_use.setText(amount)
         else:
-            # Убираем подчеркивание и задаем стандартный стиль
             self.balance_use.setStyleSheet("border: none;")
             self.balance_use.setText("-")
-            
-        self.priority.setText(str(lamports_to_sol(wallet.usepriorityLevelWithMaxLamports)))
+
+        self.priority.setText(str(lamports_to_sol(self.wallet_instance.usepriorityLevelWithMaxLamports)))
 
         # Подключение сигналов
-        wallet.is_use_changed.connect(self.update_use_display)
-        wallet.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
+        self.wallet_instance.is_use_changed.connect(self.update_use_display)
+        self.wallet_instance.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
+
+        self.wallet_instance.wallet.balanceChanged.connect(self.update_balance_display)
         
+        self.wallet_instance.wallet.useTokenBalanceChanged.connect(self.update_useTokenBalance_display)
+
+
     def on_use_state_changed(self, state):
         if self.wallet_instance:
             self.wallet_instance.is_use = state == 2
+
+    def on_priority_changed(self):
+        if self.wallet_instance:
+            try:
+                value = sol_to_lamports(float(self.priority.text()))
+                self.wallet_instance.usepriorityLevelWithMaxLamports = value
+            except ValueError:
+                # Неверный ввод, игнорируем
+                pass
 
     async def toggle_master_wallet(self):
         if self.wallet_instance:
@@ -284,6 +296,25 @@ class MyWidget(QWidget, Ui_MyWidget):
     def update_priority_display(self, value: int):
         self.priority.setText(str(lamports_to_sol(value)))
 
+
+    def update_master_display(self, value: bool):
+        self.is_master_button.setText("MASTER" if value else "SIMPLE")
+
+    def update_balance_display(self, value: int):
+        self.balance_sol.setText(str(lamports_to_sol(value)))
+
+    def update_useTokenBalance_display(self,value: useTokenInfo):
+        if value is not None:
+            token_balance:useTokenInfo = value
+            amount = str(token_units_to_amount(token_balance.tokenInfo.token_amount.amount, self.solana_manager.decimals))
+            if token_balance.confirmation:
+                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid green;")
+            else:
+                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid yellow;")
+            self.balance_use.setText(amount)
+        else:
+            self.balance_use.setStyleSheet("border: none;")
+            self.balance_use.setText("-")
 
         
     

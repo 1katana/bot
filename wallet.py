@@ -16,6 +16,7 @@ from dataclases.tokensData import TokensData,parse_rpc_response,TokenInfo,useTok
 import asyncio
 import time
 import functools
+from PySide6.QtCore import QObject, Signal, Property
 
 
 def measure_time(func):
@@ -29,30 +30,57 @@ def measure_time(func):
         return result
     return wrapper_measure_time
 
-class Wallet:
-    def __init__(self, keypair: Keypair, name: str, is_master=False):
+
+
+    
+
+class Wallet(QObject):
+    balanceChanged = Signal(int)  # Сигнал для отслеживания изменений баланса
+    useTokenBalanceChanged = Signal(object)  # Используем object, так как тип useTokenInfo неизвестен
+
+    def __init__(self, keypair, name: str, is_master=False):
         """
         Инициализация кошелька с заданной парой ключей, именем и флагом,
         указывающим, является ли кошелек главным.
-        
+
         :param keypair: Пара ключей для кошелька.
         :param name: Имя кошелька.
         :param is_master: Флаг, указывающий, является ли кошелек главным.
         """
-        try:
-            self.name = name
-            self.keypair = keypair
-            self.is_master = is_master
-            self.balance: int = 0
-            self.tokens: TokensData = None
-            
-            self.use_token_balance:useTokenInfo=None
-            
-        except Exception as e:
-            print(f"Ошибка при инициализации кошелька: {e}")
-    
-    
-    # def set_use_token_balance(self,mint:str)
+        super().__init__()  # Важно вызвать конструктор QObject
+        self._balance: int = 0
+        self._use_token_balance:useTokenInfo = None
+        self.name = name
+        self.keypair = keypair
+        self.is_master = is_master
+        self.tokens = None
+
+    @property
+    def balance(self) -> int:
+        """Текущий баланс."""
+        return self._balance
+
+    @balance.setter
+    def balance(self, value: int):
+        """Установить новый баланс и уведомить об изменении."""
+        if not isinstance(value, int):
+            raise ValueError("Баланс должен быть целым числом.")
+        if self._balance != value:
+            self._balance = value
+            self.balanceChanged.emit(value)  # Уведомляем об изменении
+
+    @property
+    def use_token_balance(self):
+        """Текущая информация о токенах."""
+        return self._use_token_balance
+
+    @use_token_balance.setter
+    def use_token_balance(self, value):
+        """Установить новую информацию о токенах и уведомить об изменении."""
+        # Предполагается, что `useTokenInfo` — это пользовательский объект
+        if self._use_token_balance != value:
+            self._use_token_balance = value
+            self.useTokenBalanceChanged.emit(value)  # Уведомляем об изменении
     
     
 

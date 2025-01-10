@@ -120,7 +120,7 @@ class SolanaManager:
 
     async def update(self):
         print("\n Загрузка баланса...")
-        async def fetch_balance(wallet):
+        async def fetch_balance(wallet: UseClasses):
             """Обновляет баланс для одного кошелька."""
             await wallet.wallet.get_balance(self.client)
 
@@ -335,7 +335,7 @@ class SolanaManager:
                     return
 
         # Отправка транзакций
-        await self._send_signed_transactions(list_sign_transactions, confirmation_callback)
+        await self._send_signed_transactions(list_sign_transactions)
   
     	
     async def buy_token(self, amount: int, confirmation_callback):
@@ -391,9 +391,11 @@ class SolanaManager:
                 buy_amount = balance - maximum_commission
                 if buy_amount <= 0:
                     print(f"Кошелек {wallet.wallet.name} не может совершить покупку из-за нехватки SOL.")
-                    if not await confirmation_callback(
+                    status=await confirmation_callback(
                             f"Кошелек {wallet.wallet.name} не может совершить покупку из-за нехватки SOL.\n"
-                            f"Пропустить кошелек {wallet.wallet.name}?"):
+                            f"Пропустить кошелек {wallet.wallet.name}?")
+                        
+                    if status:
                         print("Прерывание выполнения по запросу пользователя.")
                         return
                     continue
@@ -403,6 +405,14 @@ class SolanaManager:
             print(f"Кошелек {wallet.wallet.get_public_key()} покупает токены на {buy_amount} lamports.")
 
             try:
+                if amount!=buy_amount:
+
+                    quote_to_buy = await Jupiter.get_swap_quote(
+                        self.main_token,
+                        self.use_token,
+                        buy_amount
+                    )
+
                 # Использование первой котировки для операции
                 swap = await Jupiter.swap_tokens(
                     wallet.wallet.keypair,
@@ -435,7 +445,7 @@ class SolanaManager:
                     return
 
         # Отправка подписанных транзакций
-        await self._send_signed_transactions(list_sign_transactions)
+        await self._send_signed_transactions(list_sign_transactions,quote_to_buy=quote_to_buy)
 
         
         
