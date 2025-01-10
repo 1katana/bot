@@ -220,6 +220,7 @@ class Wallet(QObject):
         :param client: Асинхронный клиент для взаимодействия с блокчейном.
         :return: Подпись транзакции.
         """
+        print("\n")
         try:
             return await client.send_transaction(txn)
         except Exception as e:
@@ -257,6 +258,7 @@ class Wallet(QObject):
         :param client: Асинхронный клиент для взаимодействия с блокчейном.
         :return: Подпись транзакции.
         """
+        print("\n")
         try:
             result = await client.send_raw_transaction(bytes(signed_txn), opts)
 

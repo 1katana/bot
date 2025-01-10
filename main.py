@@ -185,8 +185,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         msg_box.setWindowTitle('Confirmation')
 
         # Add custom buttons
-        stop_button = msg_box.addButton('Продолжить', QMessageBox.NoRole)
-        continue_button = msg_box.addButton('Прекратить', QMessageBox.YesRole)
+        continue_button = msg_box.addButton('Продолжить', QMessageBox.YesRole)
+        stop_button = msg_box.addButton('Прекратить', QMessageBox.NoRole)
+        
         
 
         # Show the message box and wait for user interaction
@@ -196,9 +197,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         clicked_button = msg_box.clickedButton()
 
         if clicked_button == continue_button:
-            return True
-        elif clicked_button == stop_button:
             return False
+        elif clicked_button == stop_button:
+            return True
 
     # @Slot(str)
     # def update_console(self, message):

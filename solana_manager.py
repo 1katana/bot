@@ -119,7 +119,7 @@ class SolanaManager:
         
 
     async def update(self):
-        print("\n Загрузка баланса...")
+        print("\n Загрузка баланса\n ...")
         async def fetch_balance(wallet: UseClasses):
             """Обновляет баланс для одного кошелька."""
             await wallet.wallet.get_balance(self.client)
@@ -139,7 +139,7 @@ class SolanaManager:
             await fetch_token_accounts(wallet)
             await asyncio.sleep(5)  # Задержка между группами
         print("\n Загружено")
-        print([[w.wallet.balance,w.wallet.tokens] for w in self.wallets])
+        # print([[w.wallet.balance,w.wallet.tokens] for w in self.wallets])
             
         
     async def load_from_dir(self):
@@ -292,9 +292,8 @@ class SolanaManager:
                 if token_balance is None:
                     print(f"{wallet.wallet.name} Такого токена нет")
                     status=await confirmation_callback(f"Кошелек {wallet.wallet.name} не имеет таких токенов!!!\n Пропустить кошелек {wallet.wallet.name}?")
-                    print(status)
                     if status:
-                        print()
+                        print("Прерывание выполнения по запросу пользователя.")
                         return
                     continue
             else:
@@ -322,7 +321,8 @@ class SolanaManager:
 
                 if sign_trans is None:
                     print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
-                    if not await confirmation_callback(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n Пропустить кошелек {wallet.wallet.name}?"):
+                    status=await confirmation_callback(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n Пропустить кошелек {wallet.wallet.name}?")
+                    if status:
                         print("Прерывание выполнения по запросу пользователя.")
                         return
                     continue
@@ -330,7 +330,8 @@ class SolanaManager:
                 list_sign_transactions.append((wallet.wallet, sign_trans))
             except Exception as e:
                 print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
-                if not await confirmation_callback(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n Пропустить кошелек {wallet.wallet.name} после ошибки?"):
+                status=confirmation_callback(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n Пропустить кошелек {wallet.wallet.name} после ошибки?")
+                if status:    
                     print("Прерывание выполнения по запросу пользователя.")
                     return
 
@@ -428,9 +429,11 @@ class SolanaManager:
 
                 if sign_trans is None:
                     print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
-                    if not await confirmation_callback(
+                    status =confirmation_callback(
                             f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n"
-                            f"Пропустить кошелек {wallet.wallet.name}?"):
+                            f"Пропустить кошелек {wallet.wallet.name}?")
+                        
+                    if status:
                         print("Прерывание выполнения по запросу пользователя.")
                         return
                     continue
@@ -438,9 +441,10 @@ class SolanaManager:
                 list_sign_transactions.append((wallet.wallet, sign_trans))
             except Exception as e:
                 print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
-                if not await confirmation_callback(
+                status = await confirmation_callback(
                         f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n"
-                        f"Пропустить кошелек {wallet.wallet.name} после ошибки?"):
+                        f"Пропустить кошелек {wallet.wallet.name} после ошибки?")
+                if status:
                     print("Прерывание выполнения по запросу пользователя.")
                     return
 
