@@ -25,8 +25,13 @@ class SolanaManager:
 
         self.AsyncHTTPProvider=AsyncHTTPProvider(endpoint=api_url)
         
+        
+        
         self.client:AsyncClient=client
         self.clientCore:_ClientCore=_ClientCore(self.client.commitment)
+        
+        
+        
         self.wallet_manager = wallet_manager
         self.wallets:list[UseClasses]=[]
         
@@ -35,6 +40,8 @@ class SolanaManager:
         
         self.use_token:str=""
         self.decimals:int=None
+        
+        
         
     async def set_use_token(self, use_token: str):
         self.use_token = use_token

@@ -210,14 +210,14 @@ class MyWidget(QWidget, Ui_MyWidget):
 
         self.is_master_button.clicked.connect(lambda: asyncio.create_task(self.toggle_master_wallet()))
         self.delete_button.clicked.connect(lambda: asyncio.create_task(self.delete_wallet()))
-        self.use.stateChanged.connect(self.on_use_state_changed)
+        self.use.stateChanged.connect(lambda state: asyncio.create_task(self.on_use_state_changed(state)))
         self.priority.editingFinished.connect(self.on_priority_changed)
 
     @Slot(UseClasses)
     def view(self, useClass: UseClasses):
         self.wallet_instance = useClass
 
-        # Настройка начального состояния
+        # # Настройка начального состояния
         self.use.setChecked(self.wallet_instance.is_use)
         self.is_master_button.setText("MASTER" if self.wallet_instance.wallet.is_master else "SIMPLE")
         self.name.setText(self.wallet_instance.wallet.name)
@@ -247,9 +247,10 @@ class MyWidget(QWidget, Ui_MyWidget):
         self.wallet_instance.wallet.useTokenBalanceChanged.connect(self.update_useTokenBalance_display)
 
 
-    def on_use_state_changed(self, state):
+    async def on_use_state_changed(self, state):
         if self.wallet_instance:
             self.wallet_instance.is_use = state == 2
+            await self.solana_manager.init_wallets()
 
     def on_priority_changed(self):
         if self.wallet_instance:
