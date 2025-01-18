@@ -1,22 +1,22 @@
 from solana.rpc.async_api import AsyncClient
-from solders.pubkey import Pubkey
+from solders.pubkey import Pubkey # type: ignore
 import requests
 import json
-from solders.keypair import Keypair
+from solders.keypair import Keypair # type: ignore
 import asyncio
-from solders.transaction import VersionedTransaction
-from wallet import Wallet
-from walletManager import WalletManager
-from dataclases.utils import UseClasses
+from solders.transaction import VersionedTransaction # type: ignore
+from app.managers.wallet_managers.wallet import Wallet
+from app.managers.wallet_managers.walletManager import WalletManager
+from app.dataclases.utils import UseClasses
 from typing import List, Tuple
-from jupiter import Jupiter
+from app.managers.jupiter.jupiter import Jupiter
 from solana.rpc.providers.async_http import AsyncHTTPProvider
-from solders.rpc.requests import GetTokenAccountsByOwner
-from solders.rpc.responses import GetTokenAccountsByOwnerJsonParsedResp
+from solders.rpc.requests import GetTokenAccountsByOwner # type: ignore
+from solders.rpc.responses import GetTokenAccountsByOwnerJsonParsedResp # type: ignore
 from solana.rpc.core import _ClientCore
 from solana.rpc.types import TokenAccountOpts
-from dataclases.tokensData import TokenInfo,useTokenInfo,TokenAmount
-from converter import *
+from app.dataclases.tokensData import TokenInfo,useTokenInfo,TokenAmount
+from app.utils.converter import *
 
 
 class SolanaManager:
@@ -71,7 +71,7 @@ class SolanaManager:
 
     
     @classmethod
-    async def create(cls, api_url="https://api.mainnet-beta.solana.com", wallets_dir="wallets"):
+    async def create(cls, api_url="https://api.mainnet-beta.solana.com", wallets_dir="save_wallets"):
         
         client=AsyncClient(api_url)
         

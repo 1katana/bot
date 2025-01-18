@@ -1,11 +1,8 @@
 
-from wallet import Wallet
-from dataclasses import dataclass, field
+from app.managers.wallet_managers.wallet import Wallet
 from typing import List, Optional
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtCore import QObject, Property, Signal
-from dataclases.tokensData import useTokenInfo
-from dataclasses import dataclass
 from PySide6.QtCore import QObject, Signal, Property
 
 class UseClasses(QObject):

@@ -4,7 +4,7 @@ from solders.message import MessageV0 # type: ignore
 from solders.transaction import VersionedTransaction # type: ignore
 from solders.pubkey import Pubkey # type: ignore
 from solana.rpc.async_api import AsyncClient
-from jupiter import Jupiter
+from app.managers.jupiter.jupiter import Jupiter
 import base64
 from solders.pubkey import Pubkey # type: ignore
 from solana.rpc.types import TxOpts
@@ -12,7 +12,7 @@ from solders.signature import Signature # type: ignore
 from solders import message
 import json
 from solana.rpc.types import TokenAccountOpts
-from dataclases.tokensData import TokensData,parse_rpc_response,TokenInfo,useTokenInfo
+from app.dataclases.tokensData import TokensData,parse_rpc_response,TokenInfo,useTokenInfo
 import asyncio
 import time
 import functools

@@ -1,15 +1,15 @@
 import json
 import os
 from solders.keypair import Keypair # type: ignore
-from wallet import Wallet
+from app.managers.wallet_managers.wallet import Wallet
 import asyncio
 from solana.rpc.async_api import AsyncClient
-from jupiter import Jupiter
+from app.managers.jupiter.jupiter import Jupiter
 import aiofiles
 from typing import Optional, Set
 
 class WalletManager:
-    def __init__(self, wallets_dir="wallets"):
+    def __init__(self, wallets_dir="save_wallets"):
         os.makedirs(wallets_dir, exist_ok=True)
         self.wallets_dir = os.path.join(wallets_dir, "keypairs")
         self.db_file = os.path.join(wallets_dir, "wallet_db.json")
