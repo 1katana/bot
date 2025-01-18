@@ -282,24 +282,24 @@ class Wallet(QObject):
         print("Ожидание подтверждения...")
 
         try:
-            await asyncio.wait_for(client.confirm_transaction(txid, commitment="confirmed", sleep_seconds=1), timeout=10)
+            await asyncio.wait_for(client.get_signature_statuses(list(txid),True), timeout=10)
             print(f"Подтверждена: https://solscan.io/tx/{txid}")
             return True
         except asyncio.TimeoutError:
             print("Транзакция не подтверждена в течение 10 секунд.")
             return False
 
-    async def find_transaction_error(self, txid: Signature,client:AsyncClient) -> dict:
-        """
-        Ищет ошибку в транзакции.
+    # async def find_transaction_error(self, txid: Signature,client:AsyncClient) -> dict:
+    #     """
+    #     Ищет ошибку в транзакции.
         
-        :param txid: Подпись транзакции.
-        :param client: Асинхронный клиент для взаимодействия с блокчейном.
-        :return: Сведения об ошибке.
-        """
-        json_response = await client.get_transaction(txid, max_supported_transaction_version=0)
-        parsed_response = json.loads(json_response.to_json())["result"]["meta"]["err"]
-        return parsed_response
+    #     :param txid: Подпись транзакции.
+    #     :param client: Асинхронный клиент для взаимодействия с блокчейном.
+    #     :return: Сведения об ошибке.
+    #     """
+    #     json_response = await client.get_transaction(txid, max_supported_transaction_version=0)
+    #     parsed_response = json.loads(json_response.to_json())["result"]["meta"]["err"]
+    #     return parsed_response
 
     def get_public_key(self):
         """Возвращает публичный ключ кошелька."""

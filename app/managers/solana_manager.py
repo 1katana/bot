@@ -17,36 +17,52 @@ from solana.rpc.core import _ClientCore
 from solana.rpc.types import TokenAccountOpts
 from app.dataclases.tokensData import TokenInfo,useTokenInfo,TokenAmount
 from app.utils.converter import *
+from app.managers.config import *
+
 
 
 class SolanaManager:
-    def __init__(self,api_url: str, client: AsyncClient, wallet_manager: WalletManager):
+    def __init__(self):
         
-
-        self.AsyncHTTPProvider=AsyncHTTPProvider(endpoint=api_url)
+        self.config = Config()
+           
+        self.client:AsyncClient
+             
+        self.wallet_manager:WalletManager
         
-        
-        
-        self.client:AsyncClient=client
-        self.clientCore:_ClientCore=_ClientCore(self.client.commitment)
-        
-        
-        
-        self.wallet_manager = wallet_manager
-        self.wallets:list[UseClasses]=[]
-        
+        self.wallets:list[UseClasses]=[]   
         
         self.main_token="So11111111111111111111111111111111111111112"
         
-        self.use_token:str=""
+        self.use_token = self.config.primary_mint
         self.decimals:int=None
         
+    @classmethod
+    async def create(cls):
+        
+        
+        
+        sol_man=cls()
+        
+        sol_man.wallet_manager= await WalletManager.create(sol_man.config.wallets_dir)
+        
+        await sol_man.init_wallets()
+        await sol_man.connect_solana(sol_man.config.api_key)
+        return sol_man
+        
+        
+        
+    async def connect_solana(self, api_url="https://api.mainnet-beta.solana.com"):
+        if isinstance(self.client, AsyncClient):
+            await self.client.close()
+        self.client = AsyncClient(base_url=api_url)
         
         
     async def set_use_token(self, use_token: str):
         self.use_token = use_token
+        self.config.primary_mint=use_token
         self.decimals=(await self.client.get_token_supply(Pubkey.from_string(use_token))).value.decimals
-        print(self.decimals)
+        print("НЕ УДАЛОСЬ ПОЛУЧИТЬ ИНФОРМАЦИЮ О ТОКЕНЕ")
     
     async def init_wallets(self):
 
@@ -74,27 +90,12 @@ class SolanaManager:
         self.use_wallets = [wallet for wallet in self.wallets if wallet.is_use==True]
 
 
-    
-
-    
-    @classmethod
-    async def create(cls, api_url="https://api.mainnet-beta.solana.com", wallets_dir="save_wallets"):
-        
-        client=AsyncClient(api_url)
-        
-        wallet_manager =await WalletManager.create(wallets_dir)
-        
-        sol_man=cls(api_url,client, wallet_manager)
-        
-        await sol_man.init_wallets()
-        return sol_man
 
     async def close(self):
         """
         Закрывает соединение с Solana API
         """
-        for wallet in self.wallets:
-            await wallet.wallet.close_client()
+        self.client.close()
         
         print("Соединение с Solana API закрыто.")
 
@@ -512,35 +513,3 @@ async def console_confirmation(message: str) -> bool:
     user_input = input(f"{message} (y/n): ").strip().lower()
     return user_input in {"y", "yes"}       
         
-async def main():        
-
-    solana_manager = await SolanaManager.create()
-    
-    # await solana_manager.create_wallets(3)
-    print(solana_manager.wallets)
-    solana_manager.use_token="7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr"
-    
-    for w in solana_manager.use_wallets:
-        print(w.wallet.name)
-        print(w.wallet.get_public_key())
-        print(await w.wallet.get_balance(solana_manager.client))
-        # if w.wallet.name=="wallet1":
-        #     if w.wallet.name=="wallet1":
-        #         w.wallet.is_master=True
-        #     continue
-        # w.is_use=False
-        
-    # await solana_manager.init_wallets()
-    
-    # await solana_manager.collect_funds_to_master()
-    # await solana_manager.distribute_funds()
-    # await solana_manager.buy_token(15_000_000,console_confirmation)
-    await solana_manager.sell_token(console_confirmation)
-    
-        
-    print()
-        
-        
-if __name__=="__main__":
-    
-    asyncio.run(main())
