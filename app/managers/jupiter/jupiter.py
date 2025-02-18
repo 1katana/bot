@@ -6,7 +6,7 @@ from typing import Optional
 
 
 class Jupiter:
-    BASE_URL = "https://quote-api.jup.ag/v6"
+    BASE_URL = "https://api.jup.ag/swap/v1"
     QUOTE_ENDPOINT = "/quote"
     SWAP_ENDPOINT="/swap"
 
@@ -20,7 +20,7 @@ class Jupiter:
         cls.BASE_URL = url
 
     @classmethod
-    async def get_swap_quote(cls, input_mint: str, output_mint: str, amount: int) -> Optional[dict]:
+    async def get_swap_quote(cls, input_mint: str, output_mint: str, amount: int,dop_param={}) -> Optional[dict]:
         """
         Получает котировку для обмена между двумя токенами.
 
@@ -33,14 +33,16 @@ class Jupiter:
             "inputMint": input_mint,
             "outputMint": output_mint,
             "amount": amount
-            # "autoSlippage": "true",
+            
         }
+        
+        merge_params=params | dop_param
 
         url = f"{cls.BASE_URL}{cls.QUOTE_ENDPOINT}"
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(url, params=params) as response:
+                async with session.get(url, params=merge_params) as response:
                     if response.status == 200:
                         return await response.json()
                     else:
@@ -51,8 +53,7 @@ class Jupiter:
                 return None
         
     @classmethod
-    async def swap_tokens(cls, sender_keypair: Keypair, quote_response: dict, prioritizationFeeLamports=0, 
-                          priorityLevelWithMaxLamports=None) -> Optional[dict]:
+    async def swap_tokens(cls, sender_keypair: Keypair, quote_response: dict,dop_param={}) -> Optional[dict]:
         """
         Perform a token swap.
 
@@ -71,18 +72,11 @@ class Jupiter:
         payload = {
             "userPublicKey": str(pubkey),
             "quoteResponse": quote_response,
-            "wrapUnwrapSOL": True,
-            "dynamicComputeUnitLimit":True,
-            "dynamicSlippage": {"maxBps": 2000},
             "asLegacyTransaction": False
-
         }
+        
+        merge_payload = payload | dop_param
 
-        # Add prioritization parameters based on input
-        if priorityLevelWithMaxLamports:
-            payload["prioritizationFeeLamports"] = {"priorityLevelWithMaxLamports": priorityLevelWithMaxLamports } 
-        else:
-            payload["prioritizationFeeLamports"] = prioritizationFeeLamports
 
         headers = {
             'Content-Type': 'application/json',
@@ -91,7 +85,7 @@ class Jupiter:
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.post(url, headers=headers, json=payload) as response:
+                async with session.post(url, headers=headers, json=merge_payload) as response:
                     if response.status == 200:
                         return await response.json()
                     else:

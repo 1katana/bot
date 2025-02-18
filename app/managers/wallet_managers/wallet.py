@@ -227,7 +227,7 @@ class Wallet(QObject):
             print(f"Ошибка при отправке транзакции: {e}")
 
     @measure_time
-    async def sign_transaction_token(self, transaction_data: dict):
+    async def sign_transaction_token(self, swap_transaction):
         """
         Подписание транзакции токена.
         
@@ -235,9 +235,24 @@ class Wallet(QObject):
         :return: Подписанная транзакция.
         """
         try:
-            swap_transaction = transaction_data['swapTransaction']
             decoded_swap_transaction = base64.b64decode(swap_transaction)
             raw_txn = VersionedTransaction.from_bytes(decoded_swap_transaction)
+            signature = self.keypair.sign_message(message.to_bytes_versioned(raw_txn.message))
+            signed_txn = VersionedTransaction.populate(raw_txn.message, [signature])
+            return signed_txn
+        except Exception as e:
+            print(f"Ошибка при подписании транзакции токена: {e}")
+            
+    @measure_time
+    async def sign_transaction_token(self, raw_txn: VersionedTransaction):
+        """
+        Подписание транзакции токена.
+        
+        :param transaction_data: Сырые данные транзакции.
+        :return: Подписанная транзакция.
+        """
+        try:
+            
             signature = self.keypair.sign_message(message.to_bytes_versioned(raw_txn.message))
             signed_txn = VersionedTransaction.populate(raw_txn.message, [signature])
             return signed_txn

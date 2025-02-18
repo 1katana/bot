@@ -7,7 +7,7 @@ from app.ui.main_ui import MainWindow
 
 
 async def main():
-    solana_manager = await SolanaManager.create(api_url="https://mainnet.helius-rpc.com/?api-key=69a760dd-80db-4265-9331-e4265298a8f5")
+    solana_manager = await SolanaManager.create()
 
     app = QApplication([])
     loop = QEventLoop(app)

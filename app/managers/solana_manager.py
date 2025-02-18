@@ -18,23 +18,29 @@ from solana.rpc.types import TokenAccountOpts
 from app.dataclases.tokensData import TokenInfo,useTokenInfo,TokenAmount
 from app.utils.converter import *
 from app.managers.config import *
-
-
+from app.Jito.Bundles import JitoManager
+import base64
+from solders.message import MessageV0 
+from app.PumpFun.pumpFun import PumpFunTokenCreator,TokenCreator
 
 class SolanaManager:
     def __init__(self):
         
         self.config = Config()
            
-        self.client:AsyncClient
+        self.client:AsyncClient = None
+        
+        self.bundles = JitoManager()
+        
+        self.pumpFunTokenCreator = PumpFunTokenCreator(self.config.pump_fun_url)
              
         self.wallet_manager:WalletManager
         
         self.wallets:list[UseClasses]=[]   
         
-        self.main_token="So11111111111111111111111111111111111111112"
+        self.main_token=self.config.sol_mint
         
-        self.use_token = self.config.primary_mint
+        self.use_token:str = None
         self.decimals:int=None
         
     @classmethod
@@ -48,6 +54,7 @@ class SolanaManager:
         
         await sol_man.init_wallets()
         await sol_man.connect_solana(sol_man.config.api_key)
+        await sol_man.set_use_token(sol_man.config.primary_mint)
         return sol_man
         
         
@@ -55,14 +62,16 @@ class SolanaManager:
     async def connect_solana(self, api_url="https://api.mainnet-beta.solana.com"):
         if isinstance(self.client, AsyncClient):
             await self.client.close()
-        self.client = AsyncClient(base_url=api_url)
+        self.client = AsyncClient(endpoint=api_url)
         
         
     async def set_use_token(self, use_token: str):
         self.use_token = use_token
         self.config.primary_mint=use_token
-        self.decimals=(await self.client.get_token_supply(Pubkey.from_string(use_token))).value.decimals
-        print("НЕ УДАЛОСЬ ПОЛУЧИТЬ ИНФОРМАЦИЮ О ТОКЕНЕ")
+        try:
+            self.decimals=(await self.client.get_token_supply(Pubkey.from_string(use_token))).value.decimals
+        except:
+            print("НЕ УДАЛОСЬ ПОЛУЧИТЬ ИНФОРМАЦИЮ О ТОКЕНЕ")
     
     async def init_wallets(self):
 
@@ -325,18 +334,26 @@ class SolanaManager:
                 quote = await Jupiter.get_swap_quote(              
                     self.use_token,
                     self.main_token,
-                    token_balance
+                    token_balance,
                 )
                 swap = await Jupiter.swap_tokens(
                     wallet.wallet.keypair,
                     quote,
-                    priorityLevelWithMaxLamports={
-                        "maxLamports": wallet.usepriorityLevelWithMaxLamports,
-                        "priorityLevel": "veryHigh"
-                    }
-                )
+                    dop_param={
+                                "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                "dynamicSlippage":self.config.dynamic_slippage,
+                                "prioritizationFeeLamports": {
+                                    "priorityLevelWithMaxLamports": {
+                                        "priorityLevel": "veryHigh",  
+                                        "maxLamports": self.config.usepriorityLevelWithMaxLamports
+                                    }
+                                },
+                            }
+                    )
+                
 
-                sign_trans = await wallet.wallet.sign_transaction_token(swap)
+                sign_trans = await wallet.wallet.sign_transaction_token(swap['swapTransaction'])
 
                 if sign_trans is None:
                     print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
@@ -356,15 +373,126 @@ class SolanaManager:
 
         # Отправка транзакций
         await self._send_signed_transactions(list_sign_transactions)
-  
-    	
-    async def buy_token(self, amount: int, confirmation_callback):
-        """
-        Метод покупки токенов с подтверждением.
+    
+    
+    async def sell_bundles_token(self,amount:int,confirmation_callback):
+        list_sign_transactions = []
+        
+        
 
-        :param amount: Сумма, на которую нужно купить токены.
-        :param confirmation_callback: Функция для подтверждения действия.
-        """
+        for wallet in self.use_wallets:
+            
+            if amount==-1:
+                
+                
+                
+                if wallet.wallet.use_token_balance is None:
+                    print(f"{wallet.wallet.name} Такого токена нет")
+                    status=await confirmation_callback(f"Кошелек {wallet.wallet.name} не имеет таких токенов!!!\n Пропустить кошелек {wallet.wallet.name}?")
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+                    
+                token = wallet.wallet.use_token_balance.tokenInfo
+                
+                token_balance=None
+
+                if token.mint==self.use_token:
+                    token_balance=token.token_amount.amount
+                
+                if token_balance is None:
+                    print(f"{wallet.wallet.name} Такого токена нет")
+                    status=await confirmation_callback(f"Кошелек {wallet.wallet.name} не имеет таких токенов!!!\n Пропустить кошелек {wallet.wallet.name}?")
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+            else:
+                token_balance=amount
+
+
+            try:
+                quote_to_buy = await Jupiter.get_swap_quote(              
+                    self.use_token,
+                    self.main_token,
+                    token_balance,
+                )
+
+                print("outAmount: ",quote_to_buy["routePlan"][-1]["swapInfo"]["outAmount"])
+            except Exception as e:
+                print(f"Ошибка получения котировок для кошелька {wallet.wallet.name}: {e}")
+                continue
+            
+            print(f"Кошелек {wallet.wallet.get_public_key()} продает токены {token_balance} lamports.")
+
+            try:
+                
+                if len(list_sign_transactions)==0:
+
+                    swap = await Jupiter.swap_tokens(
+                        wallet.wallet.keypair,
+                        quote_to_buy,
+                        dop_param={
+                                "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                "dynamicSlippage":self.config.dynamic_slippage,
+                                "prioritizationFeeLamports": {               
+                                    "jitoTipLamports": 1000000
+                                },
+                            }
+                        )      
+                else:
+                    swap = await Jupiter.swap_tokens(
+                        wallet.wallet.keypair,
+                        quote_to_buy,
+                        dop_param={
+                                "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                "dynamicSlippage":self.config.dynamic_slippage,
+                                # "prioritizationFeeLamports": {
+                                #     "priorityLevelWithMaxLamports": {
+                                #         "priorityLevel": "veryHigh",  
+                                #         "maxLamports": self.config.usepriorityLevelWithMaxLamports
+                                #     }
+                                # },
+                            }
+                        )    
+                
+                decoded_swap_transaction = base64.b64decode(swap['swapTransaction'])
+                raw_txn = VersionedTransaction.from_bytes(decoded_swap_transaction)
+                
+                
+                sign_trans = await wallet.wallet.sign_transaction_token(raw_txn)
+
+                if sign_trans is None:
+                    print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
+                    status =confirmation_callback(
+                            f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n"
+                            f"Пропустить кошелек {wallet.wallet.name}?")
+                        
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+                
+                list_sign_transactions.append(sign_trans)
+                
+            except Exception as e:
+                print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
+                status = await confirmation_callback(
+                        f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n"
+                        f"Пропустить кошелек {wallet.wallet.name} после ошибки?")
+                if status:
+                    print("Прерывание выполнения по запросу пользователя.")
+                    return
+     
+        # Отправка подписанных транзакций
+        await self.bundles.send_bundle(list_sign_transactions)
+    	
+    
+    
+    async def buy_bundles_token(self,amount:int,confirmation_callback,create_token=False):
         list_sign_transactions = []
 
         for wallet in self.use_wallets:
@@ -375,14 +503,9 @@ class SolanaManager:
                 print(Exception)
                 return
 
-            # Запрос первой и второй котировок для расчетов
             try:
                 
-                quote_to_reverse = await Jupiter.get_swap_quote(
-                    self.use_token,
-                    self.main_token,
-                    amount
-                )
+                
                 quote_to_buy = await Jupiter.get_swap_quote(
                     self.main_token,
                     self.use_token,
@@ -393,17 +516,15 @@ class SolanaManager:
             except Exception as e:
                 print(f"Ошибка получения котировок для кошелька {wallet.wallet.name}: {e}")
                 continue
-
+            
+            
             # Суммируем комиссии из обоих запросов
             route_commission_to_buy = sum(
                 int(swap['swapInfo']['feeAmount']) for swap in quote_to_buy['routePlan']
             )
-            route_commission_to_reverse = sum(
-                int(swap['swapInfo']['feeAmount']) for swap in quote_to_reverse['routePlan']
-            )
 
             # Расчет максимальной комиссии
-            maximum_commission = (wallet.usepriorityLevelWithMaxLamports + 5000) * 2 + route_commission_to_buy + route_commission_to_reverse
+            maximum_commission = (wallet.usepriorityLevelWithMaxLamports + 5000) * 2 + route_commission_to_buy*2
 
             # Проверка наличия средств
             if balance < amount + maximum_commission:
@@ -430,21 +551,163 @@ class SolanaManager:
                     quote_to_buy = await Jupiter.get_swap_quote(
                         self.main_token,
                         self.use_token,
-                        buy_amount
+                        buy_amount                    
                     )
 
+                if len(list_sign_transactions)==0:
+                    # Использование первой котировки для операции
+                    swap = await Jupiter.swap_tokens(
+                        wallet.wallet.keypair,
+                        quote_to_buy,
+                        dop_param={
+                                "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                "dynamicSlippage":self.config.dynamic_slippage,
+                                "prioritizationFeeLamports": {               
+                                    "jitoTipLamports": 1000000
+                                },
+                            }
+                        )      
+                else:
+                    swap = await Jupiter.swap_tokens(
+                        wallet.wallet.keypair,
+                        quote_to_buy,
+                        dop_param={
+                                "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                "dynamicSlippage":self.config.dynamic_slippage,
+                                # "prioritizationFeeLamports": {
+                                #     "priorityLevelWithMaxLamports": {
+                                #         "priorityLevel": "veryHigh",  
+                                #         "maxLamports": self.config.usepriorityLevelWithMaxLamports
+                                #     }
+                                # },
+                            }
+                        )    
+                
+                decoded_swap_transaction = base64.b64decode(swap['swapTransaction'])
+                raw_txn = VersionedTransaction.from_bytes(decoded_swap_transaction)
+                
+                
+                sign_trans = await wallet.wallet.sign_transaction_token(raw_txn)
+
+                if sign_trans is None:
+                    print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
+                    status =confirmation_callback(
+                            f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n"
+                            f"Пропустить кошелек {wallet.wallet.name}?")
+                        
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+                
+                list_sign_transactions.append(sign_trans)
+                
+            except Exception as e:
+                print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
+                status = await confirmation_callback(
+                        f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n"
+                        f"Пропустить кошелек {wallet.wallet.name} после ошибки?")
+                if status:
+                    print("Прерывание выполнения по запросу пользователя.")
+                    return
+     
+        # Отправка подписанных транзакций
+        await self.bundles.send_bundle(list_sign_transactions)
+    	
+     
+     
+     
+    async def buy_token(self, amount: int, confirmation_callback):
+        """
+        Метод покупки токенов с подтверждением.
+
+        :param amount: Сумма, на которую нужно купить токены.
+        :param confirmation_callback: Функция для подтверждения действия.
+        """
+        list_sign_transactions = []
+
+        for wallet in self.use_wallets:
+            try:
+                # Получение баланса кошелька
+                balance = await wallet.wallet.get_balance(self.client)
+            except Exception:
+                print(Exception)
+                return
+
+            # Запрос первой и второй котировок для расчетов
+            try:
+                
+                
+                quote_to_buy = await Jupiter.get_swap_quote(
+                    self.main_token,
+                    self.use_token,
+                    amount
+                )
+
+                print("outAmount: ",quote_to_buy["routePlan"][-1]["swapInfo"]["outAmount"])
+            except Exception as e:
+                print(f"Ошибка получения котировок для кошелька {wallet.wallet.name}: {e}")
+                continue
+
+            # Суммируем комиссии из обоих запросов
+            route_commission_to_buy = sum(
+                int(swap['swapInfo']['feeAmount']) for swap in quote_to_buy['routePlan']
+            )
+
+
+            # Расчет максимальной комиссии
+            maximum_commission = (wallet.usepriorityLevelWithMaxLamports + 5000) * 2 + route_commission_to_buy*2
+
+            # Проверка наличия средств
+            if balance < amount + maximum_commission:
+                print(f"Кошелек {wallet.wallet.get_public_key()} имеет {balance} lamports, недостаточно средств.")
+                buy_amount = balance - maximum_commission
+                if buy_amount <= 0:
+                    print(f"Кошелек {wallet.wallet.name} не может совершить покупку из-за нехватки SOL.")
+                    status=await confirmation_callback(
+                            f"Кошелек {wallet.wallet.name} не может совершить покупку из-за нехватки SOL.\n"
+                            f"Пропустить кошелек {wallet.wallet.name}?")
+                        
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+                    continue
+            else:
+                buy_amount = amount + maximum_commission
+
+            print(f"Кошелек {wallet.wallet.get_public_key()} покупает токены на {buy_amount} lamports.")
+
+            try:
+                if amount!=buy_amount:
+
+                    quote_to_buy = await Jupiter.get_swap_quote(
+                        self.main_token,
+                        self.use_token,
+                        buy_amount             
+                    )
+
+                
                 # Использование первой котировки для операции
                 swap = await Jupiter.swap_tokens(
                     wallet.wallet.keypair,
                     quote_to_buy,
-                    priorityLevelWithMaxLamports={
-                        "maxLamports": wallet.usepriorityLevelWithMaxLamports,
-                        "priorityLevel": "veryHigh"
-                    }
-                )
-
+                    dop_param={
+                                "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                "dynamicSlippage":self.config.dynamic_slippage,
+                                "prioritizationFeeLamports": {
+                                    "priorityLevelWithMaxLamports": {
+                                        "priorityLevel": "veryHigh",  
+                                        "maxLamports": self.config.usepriorityLevelWithMaxLamports
+                                    }
+                                },
+                            }
+                    )
+                
                 # Подписание транзакции
-                sign_trans = await wallet.wallet.sign_transaction_token(swap)
+                sign_trans = await wallet.wallet.sign_transaction_token(swap['swapTransaction'])
 
                 if sign_trans is None:
                     print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")

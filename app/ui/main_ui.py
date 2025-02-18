@@ -2,8 +2,8 @@ import sys
 
 from PySide6.QtCore import QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
-from app.ui.ui import Ui_MainWindow 
-from app.ui.wallet_item_ui import Ui_MyWidget
+from app.ui.design.ui import Ui_MainWindow 
+from app.ui.design.wallet_item_ui import Ui_MyWidget
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject,QUrl, Signal, Slot, Qt)
 import asyncio
@@ -13,11 +13,16 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QTextCursor
 from app.dataclases.utils import *
 from app.managers.wallet_managers import wallet
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QMessageBox, QWidget
+from PySide6.QtWidgets import QApplication, QVBoxLayout, QMainWindow, QPushButton, QMessageBox, QWidget
 from app.utils.converter import *
 from qasync import QEventLoop
 from app.utils.parser_form import *
 from app.dataclases.tokensData import useTokenInfo
+from app.ui.design.setting import Ui_Form
+from app.managers.config import Config
+from app.ui.setting_ui import *
+from app.ui.wallet_item_ui import Wallet_item_ui
+from app.ui.create_token_ui import *
 
 class ConsoleOutput(QObject):
     text_written = Signal(str)
@@ -31,16 +36,22 @@ class ConsoleOutput(QObject):
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self, solana_manager:SolanaManager):
+    def __init__(self, solana_manager: SolanaManager):
         super(MainWindow, self).__init__()
         self.setupUi(self)
         self.solana_manager = solana_manager
+
+        # self.BASE_URL = "https://solscan.io/"
         
-        self.BASE_URL="https://solscan.io/"
-
-        self.webEngineView.setUrl(QUrl(self.BASE_URL))
-
-        # Connect buttons to functions
+        
+        self.token_creation_is_open = TokenCreationState()
+        self.settings_is_open = SettingsState()
+        
+        self.show_creating_token()
+        
+        self.solana_manager.pumpFunTokenCreator.validMetadataChanged.connect(self.show_creating_token)
+        
+        self.toolButton.clicked.connect(self.show_setting_window)
         self.add_wallet_button.clicked.connect(lambda: asyncio.create_task(self.add_wallet()))
         self.raspr_button.clicked.connect(lambda: asyncio.create_task(self.distribute_funds()))
         self.sobr_button.clicked.connect(lambda: asyncio.create_task(self.collect_funds()))
@@ -50,8 +61,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.buy_button.clicked.connect(lambda: asyncio.create_task(self.buy_token()))
         self.sell_button.clicked.connect(lambda: asyncio.create_task(self.sell_token()))
         self.update_button.clicked.connect(lambda: asyncio.create_task(solana_manager.update()))
-        
-        
+        self.form_create_token.clicked.connect(self.show_token_create_form)
+
+        # if solana_manager.use_token is not None:
+        #     self.token_adress.setText(solana_manager.use_token)
+        #     self.webEngineView.setUrl(QUrl(self.BASE_URL + "token/" + solana_manager.use_token))
+        #     print(self.BASE_URL + solana_manager.use_token)
+        # else:
+        #     self.webEngineView.setUrl(QUrl(self.BASE_URL))
+
         # Настройка перенаправления вывода
         self.console_output = ConsoleOutput()
         self.console_output.text_written.connect(self.update_console)
@@ -59,8 +77,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Устанавливаем перенаправление вывода
         sys.stdout = self.console_output
         sys.stderr = self.console_output
-        
+
         self.populate_wallets()
+        
+    def show_creating_token(self):
+        if self.solana_manager.pumpFunTokenCreator.valid_metadata:
+            if self.solana_manager.pumpFunTokenCreator.token_data["image_path"]:
+                image_path = self.solana_manager.pumpFunTokenCreator.token_data["image_path"]
+                pixmap = QPixmap(image_path)
+                self.label.setPixmap(pixmap.scaled(200, 200))
+                self.name_token_label.setText(self.solana_manager.pumpFunTokenCreator.token_data["name"])
+        else:
+            pixmap = QPixmap("app\\ui\\design\\empty.jpg")      
+            self.label.setPixmap(pixmap.scaled(200, 200))
+            self.name_token_label.setText("НЕТ Токена")
+        
+    def show_token_create_form(self):
+        if self.token_creation_is_open.is_open() != True:
+            TokenCreationForm(self.token_creation_is_open,self.solana_manager.pumpFunTokenCreator).show()
+            self.token_creation_is_open.set_open(True)
+
+    def show_setting_window(self):
+        if self.settings_is_open.is_open() != True:
+            Settings(self.solana_manager.config, self.settings_is_open).show()
+            self.settings_is_open.set_open(True)
         
     
     @Slot()
@@ -85,7 +125,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Добавить новые виджеты
         for wallet in new_wallets - current_wallets:
-            widget = MyWidget(solana_manager=self.solana_manager, parent=self)
+            widget = Wallet_item_ui(solana_manager=self.solana_manager, parent=self)
             widget.view(wallet)
             self.scroll_Wallets.addWidget(widget)
                 
@@ -134,7 +174,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print("ВВЕДИТЕ ТОКЕН!!!")
         await self.solana_manager.set_use_token(token_address)
         print(self.solana_manager.use_token)
-        self.webEngineView.setUrl(QUrl(self.BASE_URL+"/token/"+token_address))
+        # self.webEngineView.setUrl(QUrl(self.BASE_URL+"/token/"+token_address))
 
     @Slot()
     async def buy_token(self):
@@ -143,7 +183,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             amount=parsing_number(text,0)
             if amount !=0:
                 amount=sol_to_lamports(amount)
-                await self.solana_manager.buy_token( amount,self.show_confirmation_dialog)
+                await self.solana_manager.buy_bundles_token( amount,self.show_confirmation_dialog)
         except Exception:
             print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
 
@@ -153,7 +193,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         text = self.sell_input.text()
         amount=parsing_number(text,-1)
         lamp=amount_to_token_units(amount,self.solana_manager.decimals) if amount!=-1 else -1
-        await self.solana_manager.sell_token(lamp, self.show_confirmation_dialog)
+        await self.solana_manager.sell_bundles_token(lamp, self.show_confirmation_dialog)
         # except Exception:
         #     print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
         
@@ -198,106 +238,4 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return user_input in {"y", "yes"}
 
 
-
-
-class MyWidget(QWidget, Ui_MyWidget):
-    def __init__(self, solana_manager: SolanaManager, parent: MainWindow = None):
-        super(MyWidget, self).__init__(parent)
-        self.setupUi(self)
-        self.wallet_instance: UseClasses = None
-        self.solana_manager = solana_manager
-        self.parentMain = parent
-
-        self.is_master_button.clicked.connect(lambda: asyncio.create_task(self.toggle_master_wallet()))
-        self.delete_button.clicked.connect(lambda: asyncio.create_task(self.delete_wallet()))
-        self.use.stateChanged.connect(lambda state: asyncio.create_task(self.on_use_state_changed(state)))
-        self.priority.editingFinished.connect(self.on_priority_changed)
-
-    @Slot(UseClasses)
-    def view(self, useClass: UseClasses):
-        self.wallet_instance = useClass
-
-        # # Настройка начального состояния
-        self.use.setChecked(self.wallet_instance.is_use)
-        self.is_master_button.setText("MASTER" if self.wallet_instance.wallet.is_master else "SIMPLE")
-        self.name.setText(self.wallet_instance.wallet.name)
-        self.adress.setText(str(self.wallet_instance.wallet.get_public_key()))
-        self.balance_sol.setText(str(lamports_to_sol(self.wallet_instance.wallet.balance)))
-
-        if self.wallet_instance.wallet.use_token_balance is not None:
-            token_balance:useTokenInfo = self.wallet_instance.wallet.use_token_balance
-            amount = str(token_units_to_amount(token_balance.tokenInfo.token_amount.amount, self.solana_manager.decimals))
-            if token_balance.confirmation:
-                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid green;")
-            else:
-                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid yellow;")
-            self.balance_use.setText(amount)
-        else:
-            self.balance_use.setStyleSheet("border: none;")
-            self.balance_use.setText("-")
-
-        self.priority.setText(str(lamports_to_sol(self.wallet_instance.usepriorityLevelWithMaxLamports)))
-
-        # Подключение сигналов
-        self.wallet_instance.is_use_changed.connect(self.update_use_display)
-        self.wallet_instance.usepriorityLevelWithMaxLamports_changed.connect(self.update_priority_display)
-
-        self.wallet_instance.wallet.balanceChanged.connect(self.update_balance_display)
-        
-        self.wallet_instance.wallet.useTokenBalanceChanged.connect(self.update_useTokenBalance_display)
-
-
-    async def on_use_state_changed(self, state):
-        if self.wallet_instance:
-            self.wallet_instance.is_use = state == 2
-            await self.solana_manager.init_wallets()
-
-    def on_priority_changed(self):
-        if self.wallet_instance:
-            try:
-                value = sol_to_lamports(float(self.priority.text()))
-                self.wallet_instance.usepriorityLevelWithMaxLamports = value
-            except ValueError:
-                # Неверный ввод, игнорируем
-                pass
-
-    async def toggle_master_wallet(self):
-        if self.wallet_instance:
-            is_master = self.is_master_button.text() == "SIMPLE"
-            await self.solana_manager.set_master_wallet(self.wallet_instance.wallet, is_master)
-            self.is_master_button.setText("MASTER" if is_master else "SIMPLE")
-            self.wallet_instance.wallet.is_master = is_master
-
-    async def delete_wallet(self):
-        if self.wallet_instance:
-            if await self.solana_manager.delete_wallet(self.wallet_instance.wallet):
-                self.parentMain.populate_wallets()
-
-    def update_use_display(self, value: bool):
-        self.use.setChecked(value)
-
-    def update_priority_display(self, value: int):
-        self.priority.setText(str(lamports_to_sol(value)))
-
-
-    def update_master_display(self, value: bool):
-        self.is_master_button.setText("MASTER" if value else "SIMPLE")
-
-    def update_balance_display(self, value: int):
-        self.balance_sol.setText(str(lamports_to_sol(value)))
-
-    def update_useTokenBalance_display(self,value: useTokenInfo):
-        if value is not None:
-            token_balance:useTokenInfo = value
-            amount = str(token_units_to_amount(token_balance.tokenInfo.token_amount.amount, self.solana_manager.decimals))
-            if token_balance.confirmation:
-                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid green;")
-            else:
-                self.balance_use.setStyleSheet("border: none; border-bottom: 2px solid yellow;")
-            self.balance_use.setText(amount)
-        else:
-            self.balance_use.setStyleSheet("border: none;")
-            self.balance_use.setText("-")
-
-    
 
