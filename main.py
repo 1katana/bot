@@ -1,3 +1,5 @@
+
+
 from app.managers.solana_manager import SolanaManager
 from PySide6.QtWidgets import QApplication
 from qasync import QEventLoop

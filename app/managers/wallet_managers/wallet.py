@@ -333,3 +333,4 @@ class Wallet(QObject):
         if not isinstance(other, Wallet):
             return False
         return self.keypair == other.keypair
+

@@ -13,6 +13,8 @@ from typing import List
 from solders.transaction import VersionedTransaction
 from solders.pubkey import Pubkey
 from solders.keypair import Keypair 
+import aiohttp
+import asyncio
 
 @dataclass
 class BundleStatus:
@@ -173,7 +175,9 @@ class BlockEngine:
 class JitoManager:
     
     def __init__(self):
-        self.searcher = Searcher("https://mainnet.block-engine.jito.wtf")
+        self.url="https://mainnet.block-engine.jito.wtf"
+        self.searcher = Searcher(self.url)
+        
         
     async def get_tip_account(self) -> List[Pubkey]:
         return self.searcher.get_tip_accounts()
@@ -187,6 +191,13 @@ class JitoManager:
         print("Sent Bundle ID:", bundle_id)
         
         return bundle_id  # Теперь метод возвращает ID бандла
+    
+    # async def send_bundle(self, encoded_transactions: List[str]): 
+
+    #     bundle_id = self.searcher.send_bundle(encoded_transactions)
+    #     print("Sent Bundle ID:", bundle_id)
+        
+    #     return bundle_id  
     
     async def get_bundle_statuses(self, bundle_ids: List[str]):
         bundle_statuses = self.searcher.get_bundle_statuses(bundle_ids)
@@ -204,3 +215,53 @@ class JitoManager:
         ))
         return tip_ix
     
+    
+    # async def create_jito_instr(self, sender:Pubkey, jito_tip_amount=1000)->Instruction:
+    #     tip_accounts = await self.get_tip_account()
+    #     jito_tip_account = Pubkey.from_string(random.choice(tip_accounts))
+
+    #     tip_ix = transfer(TransferParams(
+    #         from_pubkey=sender,
+    #         to_pubkey=jito_tip_account,
+    #         lamports=jito_tip_amount
+    #     ))
+    #     return base58.b58encode(bytes(tip_ix)).decode('ascii')
+
+    
+    
+    async def send_jito_bundle(self,encoded_signed_transactions):
+        url = self.url+"/api/v1/bundles"
+        
+        
+        jito_response = requests.post(
+            "https://mainnet.block-engine.jito.wtf/api/v1/bundles",
+            headers={"Content-Type": "application/json"},
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "sendBundle",
+                "params": [
+                    encoded_signed_transactions
+                ]
+            }
+        )
+        
+        
+        headers = {"Content-Type": "application/json"}
+        # payload = {
+        #     "jsonrpc": "2.0",
+        #     "id": 1,
+        #     "method": "sendBundle",
+        #     "params": [encoded_signed_transactions]
+        # }
+        
+        # try:
+        #     async with aiohttp.ClientSession() as session:
+        #         async with session.post(url, headers=headers, json=payload) as response:
+        #             return await response.json()
+        # except aiohttp.ClientError as e:
+        #     print(f"HTTP request failed: {e}")
+        #     return None
+        # except Exception as e:
+        #     print(f"Unexpected error: {e}")
+        #     return None

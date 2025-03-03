@@ -15,18 +15,18 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFormLayout, QFrame,
     QGroupBox, QHBoxLayout, QLabel, QLayout,
     QLineEdit, QMainWindow, QPlainTextEdit, QPushButton,
     QScrollArea, QSizePolicy, QSpinBox, QStatusBar,
-    QTextEdit, QToolButton, QVBoxLayout, QWidget)
+    QToolButton, QVBoxLayout, QWidget)
 
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1151, 843)
+        MainWindow.resize(976, 677)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -39,6 +39,12 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
         self.centralwidget.setSizePolicy(sizePolicy)
+        self.widget = QWidget(self.centralwidget)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(0, 0, 100, 30))
+        self.horizontalLayout_9 = QHBoxLayout(self.widget)
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.horizontalLayout_9.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_8 = QVBoxLayout(self.centralwidget)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.horizontalLayout_6 = QHBoxLayout()
@@ -275,116 +281,119 @@ class Ui_MainWindow(object):
         sizePolicy6.setVerticalStretch(0)
         sizePolicy6.setHeightForWidth(self.groupBox_5.sizePolicy().hasHeightForWidth())
         self.groupBox_5.setSizePolicy(sizePolicy6)
-        self.verticalLayout_7 = QVBoxLayout(self.groupBox_5)
-        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.verticalLayout_10 = QVBoxLayout(self.groupBox_5)
+        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.createTokenWidget = QWidget(self.groupBox_5)
-        self.createTokenWidget.setObjectName(u"createTokenWidget")
-        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        sizePolicy7.setHorizontalStretch(0)
-        sizePolicy7.setVerticalStretch(0)
-        sizePolicy7.setHeightForWidth(self.createTokenWidget.sizePolicy().hasHeightForWidth())
-        self.createTokenWidget.setSizePolicy(sizePolicy7)
-        self.createTokenWidget.setMinimumSize(QSize(80, 100))
-        self.verticalLayout_9 = QVBoxLayout(self.createTokenWidget)
+        self.verticalLayout_9 = QVBoxLayout()
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
-        self.label = QLabel(self.createTokenWidget)
+        self.label = QLabel(self.groupBox_5)
         self.label.setObjectName(u"label")
+        sizePolicy1.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy1)
+        self.label.setMinimumSize(QSize(80, 80))
+        self.label.setMaximumSize(QSize(140, 140))
+        self.label.setBaseSize(QSize(0, 0))
         self.label.setFrameShape(QFrame.Shape.NoFrame)
         self.label.setFrameShadow(QFrame.Shadow.Plain)
-        self.label.setPixmap(QPixmap(u"app\\ui\\design\\empty.jpg"))
+        self.label.setPixmap(QPixmap(u"empty.jpg"))
         self.label.setScaledContents(False)
 
-        self.verticalLayout_9.addWidget(self.label)
+        self.verticalLayout_9.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter)
 
-        self.name_token_label = QLineEdit(self.createTokenWidget)
+        self.name_token_label = QLineEdit(self.groupBox_5)
         self.name_token_label.setObjectName(u"name_token_label")
+        self.name_token_label.setMinimumSize(QSize(0, 0))
         self.name_token_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_token_label.setReadOnly(True)
 
-        self.verticalLayout_9.addWidget(self.name_token_label, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.verticalLayout_9.addWidget(self.name_token_label)
 
 
-        self.horizontalLayout_7.addWidget(self.createTokenWidget)
+        self.horizontalLayout_7.addLayout(self.verticalLayout_9)
 
-        self.gridLayout = QGridLayout()
-        self.gridLayout.setObjectName(u"gridLayout")
+        self.verticalLayout_7 = QVBoxLayout()
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.formLayout = QFormLayout()
+        self.formLayout.setObjectName(u"formLayout")
+        self.lineEdit = QLineEdit(self.groupBox_5)
+        self.lineEdit.setObjectName(u"lineEdit")
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy7.setHorizontalStretch(0)
+        sizePolicy7.setVerticalStretch(0)
+        sizePolicy7.setHeightForWidth(self.lineEdit.sizePolicy().hasHeightForWidth())
+        self.lineEdit.setSizePolicy(sizePolicy7)
+        self.lineEdit.setMinimumSize(QSize(0, 0))
+        self.lineEdit.setMaximumSize(QSize(100, 16777215))
+        font2 = QFont()
+        font2.setPointSize(10)
+        self.lineEdit.setFont(font2)
+        self.lineEdit.setReadOnly(True)
+
+        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.lineEdit)
+
         self.time = QLineEdit(self.groupBox_5)
         self.time.setObjectName(u"time")
-        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy8.setHorizontalStretch(0)
-        sizePolicy8.setVerticalStretch(0)
-        sizePolicy8.setHeightForWidth(self.time.sizePolicy().hasHeightForWidth())
-        self.time.setSizePolicy(sizePolicy8)
+        sizePolicy7.setHeightForWidth(self.time.sizePolicy().hasHeightForWidth())
+        self.time.setSizePolicy(sizePolicy7)
         self.time.setMaximumSize(QSize(80, 16777215))
+        self.time.setFont(font2)
 #if QT_CONFIG(tooltip)
         self.time.setToolTip(u"")
 #endif // QT_CONFIG(tooltip)
         self.time.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.time.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.gridLayout.addWidget(self.time, 0, 1, 1, 1, Qt.AlignmentFlag.AlignTop)
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.time)
 
-        self.all_buy = QCheckBox(self.groupBox_5)
-        self.all_buy.setObjectName(u"all_buy")
-        sizePolicy1.setHeightForWidth(self.all_buy.sizePolicy().hasHeightForWidth())
-        self.all_buy.setSizePolicy(sizePolicy1)
-        font2 = QFont()
-        font2.setPointSize(9)
-        self.all_buy.setFont(font2)
-        self.all_buy.setChecked(False)
+        self.buy_dev = QLineEdit(self.groupBox_5)
+        self.buy_dev.setObjectName(u"buy_dev")
+        sizePolicy7.setHeightForWidth(self.buy_dev.sizePolicy().hasHeightForWidth())
+        self.buy_dev.setSizePolicy(sizePolicy7)
+        self.buy_dev.setMaximumSize(QSize(80, 16777215))
+        self.buy_dev.setFont(font2)
+        self.buy_dev.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.gridLayout.addWidget(self.all_buy, 0, 2, 1, 1, Qt.AlignmentFlag.AlignTop)
+        self.formLayout.setWidget(1, QFormLayout.FieldRole, self.buy_dev)
 
-        self.lineEdit = QLineEdit(self.groupBox_5)
-        self.lineEdit.setObjectName(u"lineEdit")
-        sizePolicy8.setHeightForWidth(self.lineEdit.sizePolicy().hasHeightForWidth())
-        self.lineEdit.setSizePolicy(sizePolicy8)
-        self.lineEdit.setMaximumSize(QSize(90, 16777215))
-        self.lineEdit.setFont(font2)
-        self.lineEdit.setReadOnly(True)
+        self.lineEdit_2 = QLineEdit(self.groupBox_5)
+        self.lineEdit_2.setObjectName(u"lineEdit_2")
+        self.lineEdit_2.setMinimumSize(QSize(0, 0))
+        self.lineEdit_2.setMaximumSize(QSize(100, 16777215))
+        self.lineEdit_2.setFont(font2)
 
-        self.gridLayout.addWidget(self.lineEdit, 0, 0, 1, 1, Qt.AlignmentFlag.AlignTop)
-
-        self.textEdit = QTextEdit(self.groupBox_5)
-        self.textEdit.setObjectName(u"textEdit")
-        sizePolicy1.setHeightForWidth(self.textEdit.sizePolicy().hasHeightForWidth())
-        self.textEdit.setSizePolicy(sizePolicy1)
-        self.textEdit.setMaximumSize(QSize(90, 42))
-        self.textEdit.setFont(font2)
-        self.textEdit.setFrameShape(QFrame.Shape.NoFrame)
-        self.textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.textEdit.setReadOnly(True)
-        self.textEdit.setTabStopDistance(77.000000000000000)
-
-        self.gridLayout.addWidget(self.textEdit, 1, 0, 1, 1, Qt.AlignmentFlag.AlignTop)
-
-        self.first_buy = QLineEdit(self.groupBox_5)
-        self.first_buy.setObjectName(u"first_buy")
-        sizePolicy8.setHeightForWidth(self.first_buy.sizePolicy().hasHeightForWidth())
-        self.first_buy.setSizePolicy(sizePolicy8)
-        self.first_buy.setMaximumSize(QSize(80, 16777215))
-        self.first_buy.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.gridLayout.addWidget(self.first_buy, 1, 1, 1, 1, Qt.AlignmentFlag.AlignTop)
+        self.formLayout.setWidget(1, QFormLayout.LabelRole, self.lineEdit_2)
 
 
-        self.horizontalLayout_7.addLayout(self.gridLayout)
+        self.verticalLayout_7.addLayout(self.formLayout)
+
+        self.all_sell_check = QCheckBox(self.groupBox_5)
+        self.all_sell_check.setObjectName(u"all_sell_check")
+        sizePolicy1.setHeightForWidth(self.all_sell_check.sizePolicy().hasHeightForWidth())
+        self.all_sell_check.setSizePolicy(sizePolicy1)
+        font3 = QFont()
+        font3.setPointSize(12)
+        font3.setBold(True)
+        self.all_sell_check.setFont(font3)
+        self.all_sell_check.setChecked(False)
+
+        self.verticalLayout_7.addWidget(self.all_sell_check, 0, Qt.AlignmentFlag.AlignHCenter)
 
 
-        self.verticalLayout_7.addLayout(self.horizontalLayout_7)
+        self.horizontalLayout_7.addLayout(self.verticalLayout_7)
+
+
+        self.verticalLayout_10.addLayout(self.horizontalLayout_7)
 
         self.form_create_token = QPushButton(self.groupBox_5)
         self.form_create_token.setObjectName(u"form_create_token")
-        sizePolicy8.setHeightForWidth(self.form_create_token.sizePolicy().hasHeightForWidth())
-        self.form_create_token.setSizePolicy(sizePolicy8)
+        sizePolicy7.setHeightForWidth(self.form_create_token.sizePolicy().hasHeightForWidth())
+        self.form_create_token.setSizePolicy(sizePolicy7)
         self.form_create_token.setMinimumSize(QSize(0, 0))
         self.form_create_token.setMaximumSize(QSize(1000, 35))
         self.form_create_token.setFont(font1)
 
-        self.verticalLayout_7.addWidget(self.form_create_token, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.verticalLayout_10.addWidget(self.form_create_token)
 
 
         self.verticalLayout_4.addWidget(self.groupBox_5)
@@ -440,21 +449,13 @@ class Ui_MainWindow(object):
         self.groupBox_5.setTitle(QCoreApplication.translate("MainWindow", u"\u0421\u043e\u0437\u0434\u0430\u043d\u0438\u0435 \u043c\u043e\u043d\u0435\u0442\u044b", None))
         self.label.setText("")
         self.name_token_label.setText(QCoreApplication.translate("MainWindow", u"TRUMP", None))
+        self.lineEdit.setText(QCoreApplication.translate("MainWindow", u"\u0412\u0440\u0435\u043c\u044f \u0432\u044b\u0445\u043e\u0434\u0430", None))
         self.time.setText("")
         self.time.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0441", None))
-        self.all_buy.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0439\u0442\u044b \u0441\u043e \u0432\u0441\u0435\u043c\u0438", None))
-        self.lineEdit.setText(QCoreApplication.translate("MainWindow", u"\u0412\u0440\u0435\u043c\u044f \u0432\u044b\u0445\u043e\u0434\u0430", None))
-        self.textEdit.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"hr { height: 1px; border-width: 0; }\n"
-"li.unchecked::marker { content: \"\\2610\"; }\n"
-"li.checked::marker { content: \"\\2612\"; }\n"
-"</style></head><body style=\" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">\u041f\u043e\u043a\u0443\u043f\u043a\u0430 mint </p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">\u043a\u043e\u0448\u0435\u043b\u044c\u043a\u0430</p></body></html>", None))
-        self.first_buy.setText("")
-        self.first_buy.setPlaceholderText(QCoreApplication.translate("MainWindow", u"sol", None))
+        self.buy_dev.setText("")
+        self.buy_dev.setPlaceholderText(QCoreApplication.translate("MainWindow", u"sol", None))
+        self.lineEdit_2.setText(QCoreApplication.translate("MainWindow", u"\u041f\u043e\u043a\u0443\u043f\u043a\u0430 DEV", None))
+        self.all_sell_check.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0439\u0442\u044b \u0441\u043e \u0432\u0441\u0435\u043c\u0438", None))
         self.form_create_token.setText(QCoreApplication.translate("MainWindow", u"\u0424\u043e\u0440\u043c\u0430 \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u044f \u043c\u043e\u043d\u0435\u0442\u044b", None))
     # retranslateUi
 

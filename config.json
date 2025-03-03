@@ -7,9 +7,9 @@
     "dynamicComputeUnitLimit": true,
     "usepriorityLevelWithMaxLamports": 4000000,
     "use_jito": true,
-    "jitoTipLamports": 4000000,
+    "jitoTipLamports": 1000000,
     "wallets_dir": "save_wallets",
     "api_key": "https://api.mainnet-beta.solana.com/",
-    "primary_mint": "HgBRWfYxEfvPhtqkaeymCQtHCrKE46qQ43pKe8HCpump",
+    "primary_mint": null,
     "sol_mint": "So11111111111111111111111111111111111111112"
 }

@@ -15,12 +15,14 @@ class Config:
         self._pump_fun_url = "https://pumpportal.fun"
         self._api_key = "https://api.mainnet-beta.solana.com/"
         
+        self._jitoTipLamports = 1000000
+        self._usepriorityLevelWithMaxLamports = 4000000
+        self.use_jito=True
+        
         self._dynamic_slippage = True
         self._wrapUnwrapSOL = True
         self._dynamicComputeUnitLimit = True
-        self._usepriorityLevelWithMaxLamports = 4000000
-        self.use_jito=True
-        self._jitoTipLamports = 1000000
+        
         self._wallets_dir = "save_wallets"
         self._primary_mint = None
         self._sol_mint = "So11111111111111111111111111111111111111112"
@@ -178,7 +180,7 @@ class Config:
     def jitoTipLamports(self):
         return self._jitoTipLamports
 
-    @usepriorityLevelWithMaxLamports.setter
+    @jitoTipLamports.setter
     def jitoTipLamports(self, value):
         self._jitoTipLamports= sol_to_lamports(value)
 

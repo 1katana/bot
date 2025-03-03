@@ -15,139 +15,185 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QFormLayout, QGridLayout,
-    QGroupBox, QHBoxLayout, QLineEdit, QPushButton,
-    QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFormLayout, QFrame,
+    QGroupBox, QLineEdit, QPushButton, QSizePolicy,
+    QTextEdit, QVBoxLayout, QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(612, 428)
-        self.gridLayout = QGridLayout(Form)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.verticalLayout_7 = QVBoxLayout()
-        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        Form.resize(358, 534)
+        self.verticalLayout_2 = QVBoxLayout(Form)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.lineEdit_6 = QLineEdit(Form)
         self.lineEdit_6.setObjectName(u"lineEdit_6")
+        font = QFont()
+        font.setFamilies([u"Rage"])
+        font.setPointSize(11)
+        font.setBold(True)
+        self.lineEdit_6.setFont(font)
         self.lineEdit_6.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lineEdit_6.setReadOnly(True)
 
-        self.verticalLayout_7.addWidget(self.lineEdit_6)
+        self.verticalLayout_2.addWidget(self.lineEdit_6)
 
-        self.verticalLayout_6 = QVBoxLayout()
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.verticalLayout_4 = QVBoxLayout()
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.jupiter_url_6 = QLineEdit(Form)
-        self.jupiter_url_6.setObjectName(u"jupiter_url_6")
-        self.jupiter_url_6.setMaximumSize(QSize(100, 16777215))
-        self.jupiter_url_6.setReadOnly(True)
+        self.groupBox_2 = QGroupBox(Form)
+        self.groupBox_2.setObjectName(u"groupBox_2")
+        self.verticalLayout = QVBoxLayout(self.groupBox_2)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.textEdit = QTextEdit(self.groupBox_2)
+        self.textEdit.setObjectName(u"textEdit")
+        self.textEdit.setEnabled(True)
+        self.textEdit.setMinimumSize(QSize(320, 0))
+        self.textEdit.setSizeIncrement(QSize(0, 0))
+        font1 = QFont()
+        font1.setPointSize(11)
+        self.textEdit.setFont(font1)
+        self.textEdit.setFrameShape(QFrame.Shape.NoFrame)
+        self.textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textEdit.setReadOnly(True)
 
-        self.verticalLayout_4.addWidget(self.jupiter_url_6, 0, Qt.AlignmentFlag.AlignLeft)
+        self.verticalLayout.addWidget(self.textEdit)
 
-        self.jupiter_url_8 = QLineEdit(Form)
+        self.formLayout_3 = QFormLayout()
+        self.formLayout_3.setObjectName(u"formLayout_3")
+        self.jupiter_url_8 = QLineEdit(self.groupBox_2)
         self.jupiter_url_8.setObjectName(u"jupiter_url_8")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.jupiter_url_8.sizePolicy().hasHeightForWidth())
+        self.jupiter_url_8.setSizePolicy(sizePolicy)
+        self.jupiter_url_8.setMinimumSize(QSize(0, 0))
         self.jupiter_url_8.setMaximumSize(QSize(100, 16777215))
+        self.jupiter_url_8.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
         self.jupiter_url_8.setReadOnly(True)
 
-        self.verticalLayout_4.addWidget(self.jupiter_url_8, 0, Qt.AlignmentFlag.AlignLeft)
+        self.formLayout_3.setWidget(0, QFormLayout.LabelRole, self.jupiter_url_8)
 
-        self.jupiter_url_9 = QLineEdit(Form)
-        self.jupiter_url_9.setObjectName(u"jupiter_url_9")
-        self.jupiter_url_9.setMaximumSize(QSize(100, 16777215))
-        self.jupiter_url_9.setReadOnly(True)
+        self.jitoTipLamports = QLineEdit(self.groupBox_2)
+        self.jitoTipLamports.setObjectName(u"jitoTipLamports")
+        self.jitoTipLamports.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.verticalLayout_4.addWidget(self.jupiter_url_9, 0, Qt.AlignmentFlag.AlignLeft)
+        self.formLayout_3.setWidget(0, QFormLayout.FieldRole, self.jitoTipLamports)
 
+        self.jupiter_url_4 = QLineEdit(self.groupBox_2)
+        self.jupiter_url_4.setObjectName(u"jupiter_url_4")
+        sizePolicy.setHeightForWidth(self.jupiter_url_4.sizePolicy().hasHeightForWidth())
+        self.jupiter_url_4.setSizePolicy(sizePolicy)
+        self.jupiter_url_4.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_4.setMaximumSize(QSize(100, 16777215))
+        self.jupiter_url_4.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
+        self.jupiter_url_4.setReadOnly(True)
 
-        self.horizontalLayout_2.addLayout(self.verticalLayout_4)
+        self.formLayout_3.setWidget(1, QFormLayout.LabelRole, self.jupiter_url_4)
 
-        self.verticalLayout_5 = QVBoxLayout()
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.sol_mint = QLineEdit(Form)
-        self.sol_mint.setObjectName(u"sol_mint")
-        self.sol_mint.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.userpriority = QLineEdit(self.groupBox_2)
+        self.userpriority.setObjectName(u"userpriority")
+        self.userpriority.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.verticalLayout_5.addWidget(self.sol_mint)
-
-        self.api_key = QLineEdit(Form)
-        self.api_key.setObjectName(u"api_key")
-        self.api_key.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.verticalLayout_5.addWidget(self.api_key)
-
-        self.wallet_dir = QLineEdit(Form)
-        self.wallet_dir.setObjectName(u"wallet_dir")
-        self.wallet_dir.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.verticalLayout_5.addWidget(self.wallet_dir)
+        self.formLayout_3.setWidget(1, QFormLayout.FieldRole, self.userpriority)
 
 
-        self.horizontalLayout_2.addLayout(self.verticalLayout_5)
+        self.verticalLayout.addLayout(self.formLayout_3)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_2)
+        self.verticalLayout_2.addWidget(self.groupBox_2)
+
+        self.groupBox_3 = QGroupBox(Form)
+        self.groupBox_3.setObjectName(u"groupBox_3")
+        self.formLayout_2 = QFormLayout(self.groupBox_3)
+        self.formLayout_2.setObjectName(u"formLayout_2")
+        self.jupiter_url_12 = QLineEdit(self.groupBox_3)
+        self.jupiter_url_12.setObjectName(u"jupiter_url_12")
+        self.jupiter_url_12.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_12.setMaximumSize(QSize(100, 16777215))
+        self.jupiter_url_12.setReadOnly(True)
+
+        self.formLayout_2.setWidget(0, QFormLayout.LabelRole, self.jupiter_url_12)
+
+        self.SOLANA_API = QLineEdit(self.groupBox_3)
+        self.SOLANA_API.setObjectName(u"SOLANA_API")
+        self.SOLANA_API.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout_2.setWidget(0, QFormLayout.FieldRole, self.SOLANA_API)
+
+        self.jupiter_url = QLineEdit(self.groupBox_3)
+        self.jupiter_url.setObjectName(u"jupiter_url")
+        self.jupiter_url.setMinimumSize(QSize(0, 0))
+        self.jupiter_url.setMaximumSize(QSize(100, 16777215))
+        self.jupiter_url.setReadOnly(True)
+
+        self.formLayout_2.setWidget(1, QFormLayout.LabelRole, self.jupiter_url)
+
+        self.jupiter_url_7 = QLineEdit(self.groupBox_3)
+        self.jupiter_url_7.setObjectName(u"jupiter_url_7")
+        self.jupiter_url_7.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout_2.setWidget(1, QFormLayout.FieldRole, self.jupiter_url_7)
+
+        self.jupiter_url_10 = QLineEdit(self.groupBox_3)
+        self.jupiter_url_10.setObjectName(u"jupiter_url_10")
+        self.jupiter_url_10.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_10.setMaximumSize(QSize(100, 16777215))
+        self.jupiter_url_10.setReadOnly(True)
+
+        self.formLayout_2.setWidget(2, QFormLayout.LabelRole, self.jupiter_url_10)
+
+        self.jito_url = QLineEdit(self.groupBox_3)
+        self.jito_url.setObjectName(u"jito_url")
+        self.jito_url.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout_2.setWidget(2, QFormLayout.FieldRole, self.jito_url)
+
+        self.jupiter_url_11 = QLineEdit(self.groupBox_3)
+        self.jupiter_url_11.setObjectName(u"jupiter_url_11")
+        self.jupiter_url_11.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_11.setMaximumSize(QSize(100, 16777215))
+        self.jupiter_url_11.setReadOnly(True)
+
+        self.formLayout_2.setWidget(3, QFormLayout.LabelRole, self.jupiter_url_11)
+
+        self.pump_fun_url = QLineEdit(self.groupBox_3)
+        self.pump_fun_url.setObjectName(u"pump_fun_url")
+        self.pump_fun_url.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout_2.setWidget(3, QFormLayout.FieldRole, self.pump_fun_url)
+
+
+        self.verticalLayout_2.addWidget(self.groupBox_3)
 
         self.groupBox = QGroupBox(Form)
         self.groupBox.setObjectName(u"groupBox")
         self.formLayout = QFormLayout(self.groupBox)
         self.formLayout.setObjectName(u"formLayout")
-        self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
-        self.formLayout.setFormAlignment(Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignTop)
-        self.jupiter_url = QLineEdit(self.groupBox)
-        self.jupiter_url.setObjectName(u"jupiter_url")
-        self.jupiter_url.setMinimumSize(QSize(200, 0))
-        self.jupiter_url.setReadOnly(True)
+        self.jupiter_url_6 = QLineEdit(self.groupBox)
+        self.jupiter_url_6.setObjectName(u"jupiter_url_6")
+        sizePolicy.setHeightForWidth(self.jupiter_url_6.sizePolicy().hasHeightForWidth())
+        self.jupiter_url_6.setSizePolicy(sizePolicy)
+        self.jupiter_url_6.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_6.setMaximumSize(QSize(150, 16777215))
+        self.jupiter_url_6.setReadOnly(True)
 
-        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.jupiter_url)
+        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.jupiter_url_6)
+
+        self.sol_mint = QLineEdit(self.groupBox)
+        self.sol_mint.setObjectName(u"sol_mint")
+        self.sol_mint.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.sol_mint)
 
         self.jupiter_url_2 = QLineEdit(self.groupBox)
         self.jupiter_url_2.setObjectName(u"jupiter_url_2")
-        self.jupiter_url_2.setMinimumSize(QSize(200, 0))
+        sizePolicy.setHeightForWidth(self.jupiter_url_2.sizePolicy().hasHeightForWidth())
+        self.jupiter_url_2.setSizePolicy(sizePolicy)
+        self.jupiter_url_2.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_2.setMaximumSize(QSize(150, 16777215))
         self.jupiter_url_2.setReadOnly(True)
 
         self.formLayout.setWidget(1, QFormLayout.LabelRole, self.jupiter_url_2)
-
-        self.jupiter_url_4 = QLineEdit(self.groupBox)
-        self.jupiter_url_4.setObjectName(u"jupiter_url_4")
-        self.jupiter_url_4.setMinimumSize(QSize(200, 0))
-        self.jupiter_url_4.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
-        self.jupiter_url_4.setReadOnly(True)
-
-        self.formLayout.setWidget(3, QFormLayout.LabelRole, self.jupiter_url_4)
-
-        self.jupiter_url_7 = QLineEdit(self.groupBox)
-        self.jupiter_url_7.setObjectName(u"jupiter_url_7")
-        self.jupiter_url_7.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.jupiter_url_7)
-
-        self.jupiter_url_3 = QLineEdit(self.groupBox)
-        self.jupiter_url_3.setObjectName(u"jupiter_url_3")
-        self.jupiter_url_3.setMinimumSize(QSize(200, 0))
-        self.jupiter_url_3.setToolTipDuration(0)
-        self.jupiter_url_3.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.jupiter_url_3.setAutoFillBackground(False)
-        self.jupiter_url_3.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
-        self.jupiter_url_3.setReadOnly(True)
-
-        self.formLayout.setWidget(2, QFormLayout.LabelRole, self.jupiter_url_3)
-
-        self.userpriority = QLineEdit(self.groupBox)
-        self.userpriority.setObjectName(u"userpriority")
-        self.userpriority.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.userpriority)
-
-        self.dynamicCompute = QCheckBox(self.groupBox)
-        self.dynamicCompute.setObjectName(u"dynamicCompute")
-        self.dynamicCompute.setMinimumSize(QSize(0, 25))
-        self.dynamicCompute.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-
-        self.formLayout.setWidget(2, QFormLayout.FieldRole, self.dynamicCompute)
 
         self.wrapUnwrapSol = QCheckBox(self.groupBox)
         self.wrapUnwrapSol.setObjectName(u"wrapUnwrapSol")
@@ -156,81 +202,55 @@ class Ui_Form(object):
 
         self.formLayout.setWidget(1, QFormLayout.FieldRole, self.wrapUnwrapSol)
 
-        self.jupiter_url_5 = QLineEdit(self.groupBox)
-        self.jupiter_url_5.setObjectName(u"jupiter_url_5")
-        self.jupiter_url_5.setMinimumSize(QSize(200, 0))
-        self.jupiter_url_5.setReadOnly(True)
+        self.jupiter_url_3 = QLineEdit(self.groupBox)
+        self.jupiter_url_3.setObjectName(u"jupiter_url_3")
+        sizePolicy.setHeightForWidth(self.jupiter_url_3.sizePolicy().hasHeightForWidth())
+        self.jupiter_url_3.setSizePolicy(sizePolicy)
+        self.jupiter_url_3.setMinimumSize(QSize(0, 0))
+        self.jupiter_url_3.setMaximumSize(QSize(150, 16777215))
+        self.jupiter_url_3.setToolTipDuration(0)
+        self.jupiter_url_3.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.jupiter_url_3.setAutoFillBackground(False)
+        self.jupiter_url_3.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
+        self.jupiter_url_3.setReadOnly(True)
 
-        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.jupiter_url_5)
+        self.formLayout.setWidget(2, QFormLayout.LabelRole, self.jupiter_url_3)
 
-        self.auto_slippage = QCheckBox(self.groupBox)
-        self.auto_slippage.setObjectName(u"auto_slippage")
-        self.auto_slippage.setMinimumSize(QSize(0, 25))
-        self.auto_slippage.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.dynamicCompute = QCheckBox(self.groupBox)
+        self.dynamicCompute.setObjectName(u"dynamicCompute")
+        self.dynamicCompute.setMinimumSize(QSize(0, 25))
+        self.dynamicCompute.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
 
-        self.formLayout.setWidget(4, QFormLayout.FieldRole, self.auto_slippage)
+        self.formLayout.setWidget(2, QFormLayout.FieldRole, self.dynamicCompute)
 
         self.lineEdit = QLineEdit(self.groupBox)
         self.lineEdit.setObjectName(u"lineEdit")
-        self.lineEdit.setMinimumSize(QSize(200, 0))
+        sizePolicy.setHeightForWidth(self.lineEdit.sizePolicy().hasHeightForWidth())
+        self.lineEdit.setSizePolicy(sizePolicy)
+        self.lineEdit.setMinimumSize(QSize(0, 0))
+        self.lineEdit.setMaximumSize(QSize(150, 16777215))
         self.lineEdit.setReadOnly(True)
 
-        self.formLayout.setWidget(5, QFormLayout.LabelRole, self.lineEdit)
+        self.formLayout.setWidget(3, QFormLayout.LabelRole, self.lineEdit)
 
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.verticalLayout = QVBoxLayout()
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.lineEdit_5 = QLineEdit(self.groupBox)
-        self.lineEdit_5.setObjectName(u"lineEdit_5")
-        self.lineEdit_5.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lineEdit_5.setReadOnly(True)
+        self.dynamic_slippage = QCheckBox(self.groupBox)
+        self.dynamic_slippage.setObjectName(u"dynamic_slippage")
+        self.dynamic_slippage.setMinimumSize(QSize(0, 25))
+        self.dynamic_slippage.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
 
-        self.verticalLayout.addWidget(self.lineEdit_5)
-
-        self.MIN = QLineEdit(self.groupBox)
-        self.MIN.setObjectName(u"MIN")
-        self.MIN.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.verticalLayout.addWidget(self.MIN)
+        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.dynamic_slippage)
 
 
-        self.horizontalLayout.addLayout(self.verticalLayout)
-
-        self.verticalLayout_2 = QVBoxLayout()
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.lineEdit_3 = QLineEdit(self.groupBox)
-        self.lineEdit_3.setObjectName(u"lineEdit_3")
-        self.lineEdit_3.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lineEdit_3.setReadOnly(True)
-
-        self.verticalLayout_2.addWidget(self.lineEdit_3)
-
-        self.MAX = QLineEdit(self.groupBox)
-        self.MAX.setObjectName(u"MAX")
-        self.MAX.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.verticalLayout_2.addWidget(self.MAX)
-
-
-        self.horizontalLayout.addLayout(self.verticalLayout_2)
-
-
-        self.formLayout.setLayout(5, QFormLayout.FieldRole, self.horizontalLayout)
-
-
-        self.verticalLayout_6.addWidget(self.groupBox)
-
-
-        self.verticalLayout_7.addLayout(self.verticalLayout_6)
+        self.verticalLayout_2.addWidget(self.groupBox)
 
         self.reset = QPushButton(Form)
         self.reset.setObjectName(u"reset")
+        font2 = QFont()
+        font2.setPointSize(10)
+        font2.setBold(True)
+        self.reset.setFont(font2)
 
-        self.verticalLayout_7.addWidget(self.reset, 0, Qt.AlignmentFlag.AlignHCenter)
-
-
-        self.gridLayout.addLayout(self.verticalLayout_7, 0, 0, 1, 1)
+        self.verticalLayout_2.addWidget(self.reset)
 
 
         self.retranslateUi(Form)
@@ -241,21 +261,32 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
         self.lineEdit_6.setText(QCoreApplication.translate("Form", u"\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438", None))
-        self.jupiter_url_6.setText(QCoreApplication.translate("Form", u"sol_mint", None))
-        self.jupiter_url_8.setText(QCoreApplication.translate("Form", u"api_key", None))
-        self.jupiter_url_9.setText(QCoreApplication.translate("Form", u"wallets_dir", None))
-        self.groupBox.setTitle(QCoreApplication.translate("Form", u"Transaction", None))
+        self.groupBox_2.setTitle(QCoreApplication.translate("Form", u"Priorityzation", None))
+        self.textEdit.setHtml(QCoreApplication.translate("Form", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:'Segoe UI'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">\u0418\u0421\u041f\u041e\u041b\u042c\u0417\u0423\u0415\u0422\u0421\u042f JitoTip</p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">\u0417\u0430 \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0438\u0437\u0430\u0446\u0438\u044e \u043e\u0442\u0432\u0435\u0447\u0430\u0435\u0442 JitoTip</p></body>"
+                        "</html>", None))
+        self.jupiter_url_8.setText(QCoreApplication.translate("Form", u"jitoTip", None))
+        self.jupiter_url_4.setText(QCoreApplication.translate("Form", u"priorityLevel", None))
+        self.groupBox_3.setTitle(QCoreApplication.translate("Form", u"URLS", None))
+        self.jupiter_url_12.setText(QCoreApplication.translate("Form", u"SOLANA_API", None))
         self.jupiter_url.setText(QCoreApplication.translate("Form", u"jupiter_url", None))
+        self.jupiter_url_10.setText(QCoreApplication.translate("Form", u"jito_url", None))
+        self.jupiter_url_11.setText(QCoreApplication.translate("Form", u"pump_fun_url", None))
+        self.groupBox.setTitle(QCoreApplication.translate("Form", u"Transaction", None))
+        self.jupiter_url_6.setText(QCoreApplication.translate("Form", u"sol_mint", None))
         self.jupiter_url_2.setText(QCoreApplication.translate("Form", u"wrapUnwrapSOL", None))
-        self.jupiter_url_4.setText(QCoreApplication.translate("Form", u"usepriorityLevelWithMaxLamports", None))
+        self.wrapUnwrapSol.setText("")
         self.jupiter_url_3.setText(QCoreApplication.translate("Form", u"dynamicComputeUnitLimit", None))
         self.dynamicCompute.setText("")
-        self.wrapUnwrapSol.setText("")
-        self.jupiter_url_5.setText(QCoreApplication.translate("Form", u"auto_slippage", None))
-        self.auto_slippage.setText("")
         self.lineEdit.setText(QCoreApplication.translate("Form", u"dynamic_slippage", None))
-        self.lineEdit_5.setText(QCoreApplication.translate("Form", u"MIN", None))
-        self.lineEdit_3.setText(QCoreApplication.translate("Form", u"MAX", None))
+        self.dynamic_slippage.setText("")
         self.reset.setText(QCoreApplication.translate("Form", u"\u0421\u0411\u0420\u041e\u0421", None))
     # retranslateUi
 

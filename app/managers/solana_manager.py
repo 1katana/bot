@@ -22,9 +22,16 @@ from app.Jito.Bundles import JitoManager
 import base64
 from solders.message import MessageV0 
 from app.PumpFun.pumpFun import PumpFunTokenCreator,TokenCreator
+from solders.signature import Signature
+from app.utils.converter import *
+from PySide6.QtCore import Signal, QObject
 
-class SolanaManager:
+class SolanaManager(QObject):
+    
+    use_token_changed = Signal(str)
+    
     def __init__(self):
+        super().__init__() 
         
         self.config = Config()
            
@@ -40,8 +47,18 @@ class SolanaManager:
         
         self.main_token=self.config.sol_mint
         
-        self.use_token:str = None
+        self._use_token:str = None
         self.decimals:int=None
+        
+    @property
+    def use_token(self):
+        return self._use_token
+
+    @use_token.setter
+    def use_token(self, value):
+        if self._use_token != value:
+            self._use_token = value
+            self.use_token_changed.emit(value)
         
     @classmethod
     async def create(cls):
@@ -617,7 +634,41 @@ class SolanaManager:
         await self.bundles.send_bundle(list_sign_transactions)
     	
      
-     
+    async def create_token(self, confirmation_callback, amount: int, create_amount: int,all_wallets: bool, time=None):
+        """В SOL amount не lamport"""
+
+        if self.pumpFunTokenCreator.valid_metadata is not None:
+            tokenCreate = await self.pumpFunTokenCreator.create_token_transaction(
+                self.use_wallets,
+                create_amount,
+                amount,
+                lamports_to_sol(self.config.usepriorityLevelWithMaxLamports)
+            )
+            
+            id=await self.bundles.send_jito_bundle(tokenCreate.transactions)
+
+            check = await self.test_transaction(tokenCreate.sign)
+            
+            if check:
+                
+                await self.set_use_token(str(tokenCreate.mint.pubkey()))
+                     
+                if time:
+                    if not all_wallets:
+                        for wal in self.use_wallets:
+                            if tokenCreate != wal:
+                                wal.is_use = False
+
+                    # Ожидание перед продажей токенов
+                    await asyncio.sleep(time)
+
+                    await self.sell_bundles_token(-1, confirmation_callback)
+
+                    if not all_wallets:
+                        for wal in self.use_wallets:
+                            if tokenCreate != wal:
+                                wal.is_use = True
+                
      
     async def buy_token(self, amount: int, confirmation_callback):
         """
@@ -733,8 +784,35 @@ class SolanaManager:
         # Отправка подписанных транзакций
         await self._send_signed_transactions(list_sign_transactions,quote_to_buy=quote_to_buy)
 
-        
-        
+    async def test_transaction(self, txids: List[str], timeout: int = 10):
+        """
+        Тестирует транзакции на подтверждение в сети.
+
+        :param txids: Список подписей транзакций.
+        :param timeout: Время ожидания в секундах (по умолчанию 10).
+        :return: Подтверждение успешности транзакций.
+        """
+        print("Ожидание подтверждения транзакций...")
+
+        start_time = asyncio.get_event_loop().time()
+
+        while True:
+            status_resp = await self.client.get_signature_statuses(txids, True)
+
+            all_confirmed = 0
+            for i, status in enumerate(status_resp.value):
+                if status is not None and status.confirmations is not None:
+                    print(f"Транзакция {txids[i]} подтверждена с {status.confirmations} подтверждениями.")
+                    all_confirmed += 1
+
+            if all_confirmed == len(txids):
+                return True
+
+            if asyncio.get_event_loop().time() - start_time > timeout:
+                print(f"Транзакции не подтверждены в течение {timeout} секунд.")
+                return False
+
+            await asyncio.sleep(1)
 
     async def _send_signed_transactions(self,signed_transactions: list[tuple[Wallet, VersionedTransaction]],quote_to_buy: dict=None):
         """

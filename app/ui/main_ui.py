@@ -49,6 +49,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.show_creating_token()
         
+        
+        
         self.solana_manager.pumpFunTokenCreator.validMetadataChanged.connect(self.show_creating_token)
         
         self.toolButton.clicked.connect(self.show_setting_window)
@@ -62,7 +64,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.sell_button.clicked.connect(lambda: asyncio.create_task(self.sell_token()))
         self.update_button.clicked.connect(lambda: asyncio.create_task(solana_manager.update()))
         self.form_create_token.clicked.connect(self.show_token_create_form)
-
+        
+        self.solana_manager.use_token_changed.connect(self.update_use_token)
+        self.update_use_token()
         # if solana_manager.use_token is not None:
         #     self.token_adress.setText(solana_manager.use_token)
         #     self.webEngineView.setUrl(QUrl(self.BASE_URL + "token/" + solana_manager.use_token))
@@ -80,6 +84,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.populate_wallets()
         
+    def update_use_token(self, new_token=0):
+        self.token_adress.setText(self.solana_manager.use_token)
+        
     def show_creating_token(self):
         if self.solana_manager.pumpFunTokenCreator.valid_metadata:
             if self.solana_manager.pumpFunTokenCreator.token_data["image_path"]:
@@ -93,6 +100,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.name_token_label.setText("НЕТ Токена")
         
     def show_token_create_form(self):
+        
         if self.token_creation_is_open.is_open() != True:
             TokenCreationForm(self.token_creation_is_open,self.solana_manager.pumpFunTokenCreator).show()
             self.token_creation_is_open.set_open(True)
@@ -100,6 +108,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def show_setting_window(self):
         if self.settings_is_open.is_open() != True:
             Settings(self.solana_manager.config, self.settings_is_open).show()
+            
             self.settings_is_open.set_open(True)
         
     
@@ -141,7 +150,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     async def distribute_funds(self):
-        text=self.buy_sol_input.text()
+        text=self.input_raspr.text()
         
         try:
             amount=parsing_number(text,-1)
@@ -180,12 +189,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     async def buy_token(self):
         text = self.buy_sol_input.text()
         try:
-            amount=parsing_number(text,0)
-            if amount !=0:
-                amount=sol_to_lamports(amount)
-                await self.solana_manager.buy_bundles_token( amount,self.show_confirmation_dialog)
+            amount = parsing_number(text, 0)
+            valid_metadata = self.solana_manager.pumpFunTokenCreator.valid_metadata is not None
+            use_wallets_length = len(self.solana_manager.use_wallets)
+
+            if valid_metadata and (use_wallets_length == 1 or amount != 0):
+                create_amount = parsing_number(self.buy_dev.text(), 0)
+                time = parsing_number(self.time.text(), None)
+                all_sell_check = self.all_sell_check.isChecked()
+
+                await self.solana_manager.create_token(
+                    self.show_confirmation_dialog,
+                    amount if use_wallets_length > 1 else 0,  
+                    create_amount=create_amount,
+                    all_wallets=all_sell_check,
+                    time=time
+                )
+            elif amount != 0:
+                amount = sol_to_lamports(amount)
+                await self.solana_manager.buy_bundles_token(amount, self.show_confirmation_dialog)
         except Exception:
             print("НЕВОЗМОЖНО ПРОИЗВЕСТИ ОПЕРАЦИЮ")
+
 
 
     @Slot()

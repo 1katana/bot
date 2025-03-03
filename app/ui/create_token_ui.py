@@ -30,12 +30,14 @@ class TokenCreationState(QObject):
             self.state_changed.emit(self._is_open)  # Уведомление об изменении
 
 class TokenCreationForm(QWidget):
-    closed = Signal()   # Сигнал для уведомления о закрытии окна
+    closed = Signal()  # Сигнал для уведомления о закрытии окна
 
-    def __init__(self, token_creation_state: TokenCreationState, pump_fun_token_creator: PumpFunTokenCreator):
-        super().__init__()
+    def __init__(self, token_creation_state, pump_fun_token_creator, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("Создание токена")
         self.setGeometry(100, 100, 400, 500)
+
+        self.updating = False
 
         self.token_creation_state = token_creation_state
         self.pump_fun_token_creator = pump_fun_token_creator
@@ -45,7 +47,8 @@ class TokenCreationForm(QWidget):
 
         self.name_input = QLineEdit()
         self.symbol_input = QLineEdit()
-        self.description_input = QTextEdit()
+        self.description_input = QLineEdit()
+
         self.twitter_input = QLineEdit()
         self.telegram_input = QLineEdit()
         self.website_input = QLineEdit()
@@ -83,10 +86,23 @@ class TokenCreationForm(QWidget):
         self.twitter_input.textChanged.connect(self.update_token_data)
         self.telegram_input.textChanged.connect(self.update_token_data)
         self.website_input.textChanged.connect(self.update_token_data)
-        
 
         self.pump_fun_token_creator.tokenDataChanged.connect(self.update_form_data)
         self.update_form_data(self.pump_fun_token_creator.token_data)
+
+        
+
+        
+        if parent:
+            self.center_on_parent()
+
+    def center_on_parent(self):
+        """Центрирует окно относительно родительского окна."""
+        if self.parent():
+            parent_rect = self.parent().geometry()
+            self.move(
+                parent_rect.center() - self.rect().center()
+            )
 
     def choose_image(self):
         file_dialog = QFileDialog()
@@ -96,7 +112,6 @@ class TokenCreationForm(QWidget):
             pixmap = QPixmap(file_path)
             self.image_label.setPixmap(pixmap.scaled(200, 200))
             self.update_token_data()
-
 
     async def validate_token(self):
         metadata = await self.pump_fun_token_creator.validate_token_metadata(
@@ -108,25 +123,18 @@ class TokenCreationForm(QWidget):
         )
 
         if metadata:
-            print("Можно создовать токен!!!")
+            print("Можно создавать токен!!!")
         else:
             print("Ошибка при проверке метаданных токена.")
-            
-        # signer_keypair = self.pump_fun_token_creator._generate_token_keypair()
-        #     token_creator = await self.pump_fun_token_creator.create_token_transaction(signer_keypair, metadata)
-        #     if token_creator:
-        #         print("Токен успешно создан:", token_creator)
-        #     else:
-        #         print("Ошибка при создании токена.")
 
     def update_token_data(self):
-        """
-        Обновляет данные токена в PumpFunTokenCreator при каждом изменении в полях.
-        """
-        token_data = {
+        if self.updating:
+            return  # Предотвращение бесконечного обновления
+
+        new_token_data = {
             "name": self.name_input.text(),
             "symbol": self.symbol_input.text(),
-            "description": self.description_input.toPlainText(),
+            "description": self.description_input.text(),
             "social_links": {
                 "twitter": self.twitter_input.text(),
                 "telegram": self.telegram_input.text(),
@@ -134,27 +142,30 @@ class TokenCreationForm(QWidget):
             },
             "image_path": self.image_path
         }
-        self.pump_fun_token_creator.token_data = token_data
+
+        if new_token_data != self.pump_fun_token_creator.token_data:
+            self.pump_fun_token_creator.token_data = new_token_data
 
     def update_form_data(self, token_data: dict):
-        """
-        Обновляет данные в полях формы при изменении данных токена.
-        """
+        self.updating = True  # Устанавливаем флаг, чтобы избежать цикла обновления
+
         self.name_input.setText(token_data["name"])
         self.symbol_input.setText(token_data["symbol"])
-        self.description_input.setPlainText(token_data["description"])
+        self.description_input.setText(token_data["description"])
         self.twitter_input.setText(token_data["social_links"]["twitter"])
         self.telegram_input.setText(token_data["social_links"]["telegram"])
         self.website_input.setText(token_data["social_links"]["website"])
         self.image_path = token_data["image_path"]
+
         if self.image_path:
             pixmap = QPixmap(self.image_path)
             self.image_label.setPixmap(pixmap.scaled(200, 200))
+
+        self.updating = False  # Сбрасываем флаг после обновления
 
     def closeEvent(self, event):
         """
         Обработчик закрытия окна.
         """
         self.closed.emit()
-        event.accept()  
-        
+        event.accept()

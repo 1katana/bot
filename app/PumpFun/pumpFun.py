@@ -9,12 +9,18 @@ from aiohttp import FormData
 import requests
 from PIL import Image
 import io
+from app.dataclases.utils import UseClasses
+from typing import List
+import base58
+from solders.signature import Signature
 
 @dataclass
 class TokenCreator:
-    def __init__(self, mint, transaction):
+    def __init__(self, mint:Keypair, sign:List[Signature],dev_wallet:UseClasses,transactions: List[str]):
         self.mint = mint
-        self.transaction = transaction
+        self.transactions=transactions
+        self.dev_wallet = dev_wallet
+        self.sign=sign
 
 class PumpFunTokenCreator(QObject):
     tokenDataChanged = Signal(dict)  
@@ -119,7 +125,11 @@ class PumpFunTokenCreator(QObject):
             async with session.post("https://pump.fun/api/ipfs", data=data) as response:
                 if response.status != 200:
                     print(f"Ошибка загрузки изображения на IPFS: {response.status}")
-                    print(await response.text())
+                    req=await response.text()
+                    if "The owner of this website (pump.fun) has banned the country or region your IP address is in (RU) from accessing this website." in req:
+                        print("The owner of this website (pump.fun) has banned the country or region your IP address is in (RU) from accessing this website.")
+                    else:
+                        print(req)
                     return None
                 return await response.json()
 
@@ -130,7 +140,7 @@ class PumpFunTokenCreator(QObject):
         """
         return Keypair()
 
-    async def create_token_transaction(self, signer_keypair, amount=1000000, priority_fee=0.0005) -> TokenCreator | None:
+    async def create_token_transaction(self, signer_keypairs:List[UseClasses], create_amount=1000000,buy_amount=1000000, priority_fee=0.0005) -> TokenCreator | None:
         """
         Создает `VersionedTransaction` для выпуска токена.
 
@@ -145,20 +155,49 @@ class PumpFunTokenCreator(QObject):
             return None
 
         mint_keypair = self._generate_token_keypair()
+        
+        
+        
+        dev_wallet:UseClasses = None
+        
+        for wal in signer_keypairs:
+            if wal.wallet.is_master:
+                dev_wallet=wal
+                
+        if dev_wallet==None:
+            print("Нету Master кошелька")
+            return None
+        else:
+            print("dev wallet: ",dev_wallet.wallet.keypair.pubkey())
+            
+        
 
         bundled_transaction_args = [
             {
-                'publicKey': str(signer_keypair.pubkey()),
+                'publicKey': str(dev_wallet.wallet.keypair.pubkey()),
                 'action': 'create',
                 'tokenMetadata': self.valid_metadata,
                 'mint': str(mint_keypair.pubkey()),
-                'denominatedInSol': 'false',
-                'amount': amount,
+                'denominatedInSol': 'true',
+                'amount': create_amount,
                 'slippage': 10,
-                'priorityFee': priority_fee,
+                # 'priorityFee': priority_fee,
                 'pool': 'pump'
             }
         ]
+        
+        for wal in signer_keypairs:
+            if wal!=dev_wallet:
+                
+                bundled_transaction_args.append({
+                    'publicKey': str(wal.wallet.keypair.pubkey()),
+                    'action': "buy",
+                    'mint': str(mint_keypair.pubkey()),
+                    'denominatedInSol': 'true',
+                    'amount': buy_amount,
+                    'slippage': 50,
+                    'pool': 'pump'
+                })
 
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -169,12 +208,27 @@ class PumpFunTokenCreator(QObject):
                     print("Ошибка при генерации транзакции.")
                     return None
 
-                transaction_json = await response.json()
+                encodedTransactions = await response.json()
+                encodedSignedTransactions = []
+                txSignatures = []
 
-                # Преобразуем JSON в VersionedTransaction
                 try:
-                    transaction = VersionedTransaction.from_bytes(bytes.fromhex(transaction_json["transaction"]))
-                    self.tokenCreator = TokenCreator(mint_keypair, transaction)
+                    for index, encodedTransaction in enumerate(encodedTransactions):
+                        if bundled_transaction_args[index]["action"] == "create":
+                            signedTx = VersionedTransaction(VersionedTransaction.from_bytes(base58.b58decode(encodedTransaction)).message, [mint_keypair, signer_keypairs[index].wallet.keypair])
+                        else:
+                            signedTx = VersionedTransaction(VersionedTransaction.from_bytes(base58.b58decode(encodedTransaction)).message, [signer_keypairs[index].wallet.keypair])
+                        
+                        encodedSignedTransactions.append(base58.b58encode(bytes(signedTx)).decode('ascii'))
+                        txSignatures.append(signedTx.signatures[0])
+
+
+                    self.tokenCreator = TokenCreator(mint_keypair, 
+                                                     txSignatures,
+                                                     dev_wallet=dev_wallet,
+                                                     transactions=encodedSignedTransactions)
+                    print("TOKEN: ",mint_keypair.pubkey())
+                    
                     return self.tokenCreator
                 except Exception as e:
                     print(f"Ошибка при создании объекта VersionedTransaction: {e}")
