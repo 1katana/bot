@@ -5,11 +5,11 @@
     "dynamic_slippage": true,
     "wrapUnwrapSOL": true,
     "dynamicComputeUnitLimit": true,
-    "usepriorityLevelWithMaxLamports": 4000000,
+    "usepriorityLevelWithMaxLamports": 5000000,
     "use_jito": true,
     "jitoTipLamports": 1000000,
     "wallets_dir": "save_wallets",
-    "api_key": "https://api.mainnet-beta.solana.com/",
-    "primary_mint": null,
+    "api_key": "https://mainnet.helius-rpc.com/?api-key=fc0b09ea-8ba7-4521-b71c-be3ac9e3dc2f",
+    "primary_mint": "FYswVpodqkgb6heWbYHji1yLNzsWsstW2eEFfgoGQqiC",
     "sol_mint": "So11111111111111111111111111111111111111112"
 }

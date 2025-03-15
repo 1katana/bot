@@ -94,10 +94,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 pixmap = QPixmap(image_path)
                 self.label.setPixmap(pixmap.scaled(200, 200))
                 self.name_token_label.setText(self.solana_manager.pumpFunTokenCreator.token_data["name"])
+                
+                self.buy_sol_input.setPlaceholderText(QCoreApplication.translate("MainWindow", u"amount", None))
+            
+            
         else:
             pixmap = QPixmap("app\\ui\\design\\empty.jpg")      
             self.label.setPixmap(pixmap.scaled(200, 200))
             self.name_token_label.setText("НЕТ Токена")
+            self.buy_sol_input.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0432 sol", None))
         
     def show_token_create_form(self):
         
@@ -200,8 +205,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 await self.solana_manager.create_token(
                     self.show_confirmation_dialog,
-                    amount if use_wallets_length > 1 else 0,  
-                    create_amount=create_amount,
+                    int(amount) if use_wallets_length > 1 else 0,  
+                    create_amount=int(create_amount),
                     all_wallets=all_sell_check,
                     time=time
                 )

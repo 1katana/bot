@@ -453,7 +453,7 @@ class Ui_MainWindow(object):
         self.time.setText("")
         self.time.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0441", None))
         self.buy_dev.setText("")
-        self.buy_dev.setPlaceholderText(QCoreApplication.translate("MainWindow", u"sol", None))
+        self.buy_dev.setPlaceholderText(QCoreApplication.translate("MainWindow", u"amount", None))
         self.lineEdit_2.setText(QCoreApplication.translate("MainWindow", u"\u041f\u043e\u043a\u0443\u043f\u043a\u0430 DEV", None))
         self.all_sell_check.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0439\u0442\u044b \u0441\u043e \u0432\u0441\u0435\u043c\u0438", None))
         self.form_create_token.setText(QCoreApplication.translate("MainWindow", u"\u0424\u043e\u0440\u043c\u0430 \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u044f \u043c\u043e\u043d\u0435\u0442\u044b", None))

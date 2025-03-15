@@ -178,10 +178,10 @@ class PumpFunTokenCreator(QObject):
                 'action': 'create',
                 'tokenMetadata': self.valid_metadata,
                 'mint': str(mint_keypair.pubkey()),
-                'denominatedInSol': 'true',
+                'denominatedInSol': 'false',
                 'amount': create_amount,
                 'slippage': 10,
-                # 'priorityFee': priority_fee,
+                'priorityFee': priority_fee,
                 'pool': 'pump'
             }
         ]
@@ -193,7 +193,7 @@ class PumpFunTokenCreator(QObject):
                     'publicKey': str(wal.wallet.keypair.pubkey()),
                     'action': "buy",
                     'mint': str(mint_keypair.pubkey()),
-                    'denominatedInSol': 'true',
+                    'denominatedInSol': 'false',
                     'amount': buy_amount,
                     'slippage': 50,
                     'pool': 'pump'

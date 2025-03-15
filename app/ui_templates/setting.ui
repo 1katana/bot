@@ -311,13 +311,13 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </property>
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>160</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>150</width>
+          <width>0</width>
           <height>16777215</height>
          </size>
         </property>
@@ -346,13 +346,13 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </property>
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>160</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>150</width>
+          <width>0</width>
           <height>16777215</height>
          </size>
         </property>
@@ -390,13 +390,13 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </property>
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>160</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>150</width>
+          <width>0</width>
           <height>16777215</height>
          </size>
         </property>
@@ -446,13 +446,13 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </property>
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>160</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>150</width>
+          <width>0</width>
           <height>16777215</height>
          </size>
         </property>

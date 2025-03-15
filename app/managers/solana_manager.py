@@ -401,7 +401,7 @@ class SolanaManager(QObject):
             
             if amount==-1:
                 
-                
+                wallet.wallet.get_token_account_by_owner(self.use_token,self.client)
                 
                 if wallet.wallet.use_token_balance is None:
                     print(f"{wallet.wallet.name} Такого токена нет")
@@ -455,7 +455,7 @@ class SolanaManager(QObject):
                                 "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
                                 "dynamicSlippage":self.config.dynamic_slippage,
                                 "prioritizationFeeLamports": {               
-                                    "jitoTipLamports": 1000000
+                                    "jitoTipLamports": self.config.jitoTipLamports
                                 },
                             }
                         )      
@@ -581,7 +581,7 @@ class SolanaManager(QObject):
                                 "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
                                 "dynamicSlippage":self.config.dynamic_slippage,
                                 "prioritizationFeeLamports": {               
-                                    "jitoTipLamports": 1000000
+                                    "jitoTipLamports": self.config.jitoTipLamports
                                 },
                             }
                         )      
@@ -653,22 +653,115 @@ class SolanaManager(QObject):
                 
                 await self.set_use_token(str(tokenCreate.mint.pubkey()))
                      
-                if time:
-                    if not all_wallets:
-                        for wal in self.use_wallets:
-                            if tokenCreate != wal:
-                                wal.is_use = False
-
-                    # Ожидание перед продажей токенов
-                    await asyncio.sleep(time)
-
-                    await self.sell_bundles_token(-1, confirmation_callback)
-
-                    if not all_wallets:
-                        for wal in self.use_wallets:
-                            if tokenCreate != wal:
-                                wal.is_use = True
+                await self.sell_time(time,tokenCreate.dev_wallet,all_wallets,confirmation_callback)
                 
+                
+                
+    async def sell_time(self,time,tokenCreate:TokenCreator,all_wallets:bool,amount: int, create_amount: int, confirmation_callback):
+        
+        
+        list_sign_transactions=[]
+        
+        if time:
+            if not all_wallets:
+                for wal in self.use_wallets:
+                    if tokenCreate != wal:
+                        wal.is_use = False
+
+            await asyncio.sleep(time)
+            
+            
+            for wallet in self.use_wallets:
+            
+                if wallet == tokenCreate.dev_wallet:
+                    token_balance=amount
+                else:
+                    token_balance=create_amount
+
+
+                try:
+                    quote_to_buy = await Jupiter.get_swap_quote(              
+                        self.use_token,
+                        self.main_token,
+                        token_balance,
+                    )
+
+                    print("outAmount: ",quote_to_buy["routePlan"][-1]["swapInfo"]["outAmount"])
+                except Exception as e:
+                    print(f"Ошибка получения котировок для кошелька {wallet.wallet.name}: {e}")
+                    continue
+                
+                print(f"Кошелек {wallet.wallet.get_public_key()} продает токены {token_balance} lamports.")
+
+                try:
+                    
+                    if len(list_sign_transactions)==0:
+
+                        swap = await Jupiter.swap_tokens(
+                            wallet.wallet.keypair,
+                            quote_to_buy,
+                            dop_param={
+                                    "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                    "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                    "dynamicSlippage":self.config.dynamic_slippage,
+                                    "prioritizationFeeLamports": {               
+                                        "jitoTipLamports": self.config.jitoTipLamports
+                                    },
+                                }
+                            )      
+                    else:
+                        swap = await Jupiter.swap_tokens(
+                            wallet.wallet.keypair,
+                            quote_to_buy,
+                            dop_param={
+                                    "wrapAndUnwrapSol": self.config.wrapUnwrapSOL,
+                                    "dynamicComputeUnitLimit":self.config.dynamicComputeUnitLimit,
+                                    "dynamicSlippage":self.config.dynamic_slippage,
+                                    # "prioritizationFeeLamports": {
+                                    #     "priorityLevelWithMaxLamports": {
+                                    #         "priorityLevel": "veryHigh",  
+                                    #         "maxLamports": self.config.usepriorityLevelWithMaxLamports
+                                    #     }
+                                    # },
+                                }
+                            )    
+                    
+                    decoded_swap_transaction = base64.b64decode(swap['swapTransaction'])
+                    raw_txn = VersionedTransaction.from_bytes(decoded_swap_transaction)
+                    
+                    
+                    sign_trans = await wallet.wallet.sign_transaction_token(raw_txn)
+
+                    if sign_trans is None:
+                        print(f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.")
+                        status =confirmation_callback(
+                                f"Кошелек {wallet.wallet.name} не смог подписать транзакцию.\n"
+                                f"Пропустить кошелек {wallet.wallet.name}?")
+                            
+                        if status:
+                            print("Прерывание выполнения по запросу пользователя.")
+                            return
+                        continue
+                    
+                    list_sign_transactions.append(sign_trans)
+                    
+                except Exception as e:
+                    print(f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}")
+                    status = await confirmation_callback(
+                            f"Ошибка при обработке кошелька {wallet.wallet.name}: {e}\n"
+                            f"Пропустить кошелек {wallet.wallet.name} после ошибки?")
+                    if status:
+                        print("Прерывание выполнения по запросу пользователя.")
+                        return
+     
+
+            bundle=await self.bundles.send_bundle(list_sign_transactions)
+            
+            if not all_wallets:
+                for wal in self.use_wallets:
+                    if tokenCreate != wal:
+                        wal.is_use = True
+        
      
     async def buy_token(self, amount: int, confirmation_callback):
         """
