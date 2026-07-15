@@ -1,42 +1,29 @@
-from solders.keypair import Keypair
-from solders.pubkey import Pubkey
-from http_request import SolanaManager
-import asyncio
-from http_request import SolanaManager
-from transaction import Transaction
-import json
 
+
+from app.managers.solana_manager import SolanaManager
+from PySide6.QtWidgets import QApplication
+from qasync import QEventLoop
+import asyncio
+from app.ui.main_ui import MainWindow
 
 
 
 async def main():
+    solana_manager = await SolanaManager.create()
+
+    app = QApplication([])
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+
+    window = MainWindow(solana_manager)
+    window.show()
     
+    with loop:
+        await loop.run_forever()
+        if window.close():
+            loop.close()
 
-    receiver=Pubkey.from_string("7n2uZLLzLRQKHQE7X9cXU74oMdCwwAHQmBcm1gkGc1HK")
-
-
-    manager= await SolanaManager.create(api_url="http://localhost:8899")
-
-    manager.add_master_wallet_from_json("C:\\Users\\Katana\\Desktop\\bot\\wallet1.json")
-
-    sender=manager.master_wallet
-
-    blockHash= await manager.get_latest_blockhash()
-
-
-        
-    trans=Transaction(sender,receiver,1_000_000_000,blockHash.value.blockhash)
-
-    print(trans)
-
-    isTrue= await manager.send_transaction(txn=trans)
-
-    print(isTrue)
-
-    b= await manager.get_balance()
-
-    print()
-
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
+    
 
